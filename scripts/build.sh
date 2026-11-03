@@ -33,10 +33,27 @@ fi
 
 log "OpenWrt $OPENWRT_VERSION -> $BUILD_DIR ($JOBS jobs)"
 
+CACHE_DL="$ROOT/.openwrt-dl-cache"
+
 if [ ! -d "$BUILD_DIR/.git" ]; then
+	# The GitHub Actions cache restores openwrt/dl before this script runs,
+	# so the build directory may exist without being a git checkout.
+	if [ -d "$BUILD_DIR" ]; then
+		log "Existing non-git build directory found, preserving downloads"
+		rm -rf "$CACHE_DL"
+		[ -d "$BUILD_DIR/dl" ] && mv "$BUILD_DIR/dl" "$CACHE_DL"
+		rm -rf "$BUILD_DIR"
+	fi
+
 	log "Cloning OpenWrt"
 	git clone --depth 1 --branch "$OPENWRT_VERSION" \
 		https://github.com/openwrt/openwrt.git "$BUILD_DIR"
+
+	if [ -d "$CACHE_DL" ]; then
+		mkdir -p "$BUILD_DIR/dl"
+		mv "$CACHE_DL"/* "$BUILD_DIR/dl/" 2>/dev/null || true
+		rm -rf "$CACHE_DL"
+	fi
 else
 	log "Reusing existing checkout"
 fi
