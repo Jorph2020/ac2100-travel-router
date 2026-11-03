@@ -101,12 +101,30 @@ cases.push({
 	file: 'view/travel/apps.js',
 	params: { E, L, document: documentStub, view: viewStub, ui: uiStub, tr: common },
 	render: {
-		installed: '1',
-		enabled: '0',
-		running: '0',
-		core: '0',
-		oc_version: '0.48.002',
-		core_version: ''
+		openclash_installed: '1',
+		openclash_running: '1',
+		openclash_core: '1',
+		openclash_version: '0.48.002',
+		openclash_core_version: 'Mihomo v1.19.33',
+		shellcrash_installed: '1',
+		shellcrash_running: '0',
+		shellcrash_dir: '/etc/ShellCrash'
+	}
+});
+
+cases.push({
+	name: 'apps-lite',
+	file: 'view/travel/apps.js',
+	params: { E, L, document: documentStub, view: viewStub, ui: uiStub, tr: common },
+	render: {
+		openclash_installed: '0',
+		openclash_running: '0',
+		openclash_core: '0',
+		openclash_version: '',
+		openclash_core_version: '',
+		shellcrash_installed: '0',
+		shellcrash_running: '0',
+		shellcrash_dir: ''
 	}
 });
 

@@ -7,6 +7,14 @@ on:
         description: "OpenWrt release tag"
         required: false
         default: "v24.10.8"
+      variant:
+        description: "full = OpenClash; lite = no OpenClash, use ShellCrash"
+        required: true
+        type: choice
+        default: "full"
+        options:
+          - full
+          - lite
   push:
     tags:
       - "v*"
@@ -44,20 +52,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: openwrt/dl
-          key: openwrt-dl-${{ github.event.inputs.openwrt_version || 'v24.10.8' }}-${{ hashFiles('feeds.conf', 'config/ac2100.config') }}
+          key: openwrt-dl-${{ github.event.inputs.openwrt_version || 'v24.10.8' }}-${{ github.event.inputs.variant || 'full' }}-${{ hashFiles('feeds.conf', 'config/ac2100.config', 'config/ac2100-lite.config') }}
           restore-keys: |
             openwrt-dl-${{ github.event.inputs.openwrt_version || 'v24.10.8' }}-
 
       - name: Build
         env:
           OPENWRT_VERSION: ${{ github.event.inputs.openwrt_version || 'v24.10.8' }}
+          CONFIG_FILE: config/${{ github.event.inputs.variant == 'lite' && 'ac2100-lite.config' || 'ac2100.config' }}
           JOBS: "4"
         run: ./scripts/build.sh
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ac2100-travel-router-${{ github.run_number }}
+          name: ac2100-travel-router-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
           path: out/*
           if-no-files-found: error
           retention-days: 30

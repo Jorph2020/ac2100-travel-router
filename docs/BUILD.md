@@ -12,6 +12,7 @@
 2. **Actions** 页面启用 workflows。
 3. 选择 **Build AC2100 travel router firmware** → **Run workflow**。
    - `openwrt_version` 默认 `v24.10.8`，可改成其他 24.10.x tag。
+   - `variant` 选 `full`（含 OpenClash）或 `lite`（不含 OpenClash，配 ShellCrash）。
 4. 首次编译约 60–150 分钟；之后有 `openwrt/dl` 缓存会快一些。
 5. 完成后在运行页面底部下载 Artifact。
 
@@ -52,6 +53,7 @@ sudo apt install build-essential clang flex bison g++ gawk gcc-multilib \
 | `OPENWRT_VERSION` | `v24.10.8` | OpenWrt tag |
 | `BUILD_DIR` | `<repo>/openwrt` | 源码目录 |
 | `JOBS` | CPU 核数 | 并行任务数 |
+| `CONFIG_FILE` | `config/ac2100.config` | 构建配置；lite 用 `config/ac2100-lite.config` |
 
 ### 增量编译
 
@@ -85,6 +87,22 @@ docker run --rm -it -v "$PWD:/src" ac2100-travel-router-builder
 镜像基于 Debian bookworm，容器内用户 uid 1000。Linux 上若宿主机 uid 不是 1000，
 建议直接用本机编译，或在容器运行后修正 `openwrt/`、`out/` 的属主。
 
+## full 与 lite
+
+| | full | lite |
+| --- | --- | --- |
+| OpenClash | 内置 | 不内置 |
+| Ruby | 需要 | 不需要 |
+| 代理方式 | OpenClash 图形界面 | 刷机后安装 ShellCrash（SSH） |
+| 内存压力 | 较高 | 较低 |
+| 适合 | 想要开箱即用图形界面 | 128 MB 内存、追求稳定 |
+
+本地构建 lite：
+
+```bash
+CONFIG_FILE="$PWD/config/ac2100-lite.config" ./scripts/build.sh
+```
+
 ## 产物
 
 `out/` 中应包含：
@@ -96,6 +114,8 @@ docker run --rm -it -v "$PWD:/src" ac2100-travel-router-builder
 | `*rootfs0.bin` | 官方固件首次刷入（根文件系统分区） |
 | `*initramfs-kernel.bin` | pb-boot 引导 / 临时 OpenWrt |
 | `sha256sums` | 校验和 |
+
+full 和 lite 的镜像文件名相同，靠 Artifact 名称里的 `full`/`lite` 区分。
 
 校验：
 

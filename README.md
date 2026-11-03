@@ -14,6 +14,8 @@
   或手机热点变成自己的网络；2.4G / 5G 可分别作为上游。
 - **类 MT3000 菜单**：`首页 / 互联网 / 客户端 / 应用 / 网络 / 系统`，首页是状态卡片
   仪表盘，中继页带扫描列表和一键连接。
+- **full / lite 两种构建**：`full` 内置 OpenClash；`lite` 去掉 OpenClash/Ruby，
+  改用更省内存的 ShellCrash，适合 128 MB 内存的 AC2100。
 - **OpenClash 预装**：`luci-app-openclash` + 中文界面 + 随包附带的
   `00-gl-direct.yaml`（全直连）兜底配置；内核在 OpenClash 页面一键下载。
 - **中文 LuCI**，默认 LAN `192.168.8.1`，默认 Wi-Fi `AC2100-Travel` /
@@ -75,8 +77,11 @@ CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-ac2100=y
 
 1. 把本目录上传到一个 GitHub 仓库（公开或私有均可）。
 2. 打开仓库的 **Actions → Build AC2100 travel router firmware → Run workflow**。
-3. 等待约 60–150 分钟（首次编译含工具链）。
-4. 在运行记录的 **Artifacts** 中下载 `ac2100-travel-router-<run>`，解压后得到：
+3. 在 **Run workflow** 里选择 `variant`：
+   - `full`：内置 OpenClash（功能全，内存占用较高）
+   - `lite`：不带 OpenClash/Ruby，刷机后自行安装 ShellCrash（更轻）
+4. 等待约 60–150 分钟（首次编译含工具链）。
+5. 在运行记录的 **Artifacts** 中下载 `ac2100-travel-router-<variant>-<run>`，解压后得到：
 
 ```
 openwrt-24.10.8-ramips-mt7621-xiaomi_redmi-router-ac2100-squashfs-sysupgrade.bin
@@ -205,7 +210,8 @@ ssh root@192.168.8.1 'sysupgrade -n /tmp/openwrt-*-squashfs-sysupgrade.bin'
 
 ```
 .
-├── config/ac2100.config              # OpenWrt .config 种子
+├── config/ac2100.config              # full：含 OpenClash
+├── config/ac2100-lite.config         # lite：不含 OpenClash，配 ShellCrash
 ├── feeds.conf                        # packages / luci / openclash（固定 commit）
 ├── package/
 │   ├── travel-router-core/           # 后端脚本 + 首次启动默认值
@@ -291,7 +297,7 @@ cat /tmp/openclash.log
 - 仅支持 Wi-Fi 中继（NAT），不支持二层桥接 / WDS / 802.11s。
 - 无 USB，因此不支持 USB 4G 网卡或 USB 随身 Wi-Fi。
 - 未集成 AdGuard Home、Docker、多 WAN 负载均衡等大体积功能。
-- OpenClash 内核与订阅需要设备联网后自行下载。
+- OpenClash 内核与订阅需要设备联网后自行下载；lite 版改用 ShellCrash（命令行管理）。
 - 本项目未在真实硬件上做完整回归测试；首次刷机请保留救砖手段。
 
 ## 许可

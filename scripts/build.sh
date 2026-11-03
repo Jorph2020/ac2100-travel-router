@@ -17,6 +17,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OPENWRT_VERSION="${OPENWRT_VERSION:-v24.10.8}"
 BUILD_DIR="${BUILD_DIR:-$ROOT/openwrt}"
 JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
+CONFIG_FILE="${CONFIG_FILE:-$ROOT/config/ac2100.config}"
+case "$CONFIG_FILE" in
+	/*) ;;
+	*) CONFIG_FILE="$ROOT/$CONFIG_FILE" ;;
+esac
 LOG="$ROOT/build.log"
 
 log() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
@@ -47,16 +52,20 @@ log "Installing local packages"
 rm -rf package/travel-router-core package/luci-app-travel-router
 cp -a "$ROOT/package/." package/
 
-log "Generating .config"
-cp "$ROOT/config/ac2100.config" .config
+log "Generating .config from $CONFIG_FILE"
+[ -f "$CONFIG_FILE" ] || die "Config file not found: $CONFIG_FILE"
+cp "$CONFIG_FILE" .config
 make defconfig
 
 grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_redmi-router-ac2100=y' .config \
 	|| die "AC2100 device profile was not selected"
 grep -q '^CONFIG_PACKAGE_luci-app-travel-router=y' .config \
 	|| die "luci-app-travel-router was not selected"
-grep -q '^CONFIG_PACKAGE_luci-app-openclash=y' .config \
-	|| die "luci-app-openclash was not selected"
+if grep -q '^CONFIG_PACKAGE_luci-app-openclash=y' .config; then
+	log "Variant: full (OpenClash)"
+else
+	log "Variant: lite (no OpenClash, use ShellCrash)"
+fi
 
 log "Downloading sources (best effort)"
 make download -j"$JOBS" >/dev/null 2>&1 || true

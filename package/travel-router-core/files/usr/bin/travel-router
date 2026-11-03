@@ -55,6 +55,7 @@ Usage: travel-router <command> [args]
   home
   clients
   openclash <status|start|stop>
+  proxy status
   reconnect
 EOF
 }
@@ -516,7 +517,7 @@ cmd_home() {
 	local hostname model firmware uptime_s load mem_total mem_avail
 	local mem_used mem_total_mb mem_pct def_dev uplink wan_ip
 	local status_out ssid signal quality relay_ip relay_state
-	local clients wifi_clients oc_running oc_enabled rootpw lan_ip ssid_2g ssid_5g
+	local clients wifi_clients oc_running oc_enabled oc_installed rootpw lan_ip ssid_2g ssid_5g
 	local shadow dev sta
 
 	hostname=$(uci_get system.@system[0].hostname)
@@ -568,6 +569,8 @@ cmd_home() {
 
 	oc_running=0
 	pidof clash >/dev/null 2>&1 && oc_running=1
+	oc_installed=0
+	[ -f /etc/config/openclash ] && oc_installed=1
 	oc_enabled=$(uci_get openclash.config.enable)
 	[ -n "$oc_enabled" ] || oc_enabled=0
 
@@ -602,6 +605,7 @@ cmd_home() {
 	printf 'relay_ip=%s\n' "$relay_ip"
 	printf 'clients=%s\n' "$clients"
 	printf 'wifi_clients=%s\n' "$wifi_clients"
+	printf 'openclash_installed=%s\n' "$oc_installed"
 	printf 'openclash_running=%s\n' "$oc_running"
 	printf 'openclash_enabled=%s\n' "$oc_enabled"
 	printf 'rootpw=%s\n' "$rootpw"
@@ -691,6 +695,52 @@ cmd_openclash() {
 	esac
 }
 
+# ------------------------------------------------------------------ proxy ---
+
+cmd_proxy() {
+	local action="${1:-status}" d
+	local oc_installed=0 oc_running=0 oc_core=0 oc_version="" oc_core_version=""
+	local sc_installed=0 sc_running=0 sc_dir=""
+
+	[ -f /etc/config/openclash ] && oc_installed=1
+	pidof clash >/dev/null 2>&1 && oc_running=1
+	[ -x /etc/openclash/core/clash_meta ] && oc_core=1
+	oc_version=$(opkg list-installed 2>/dev/null | awk '$1 == "luci-app-openclash" { print $3 }')
+	if [ "$oc_core" = "1" ]; then
+		if command -v timeout >/dev/null 2>&1; then
+			oc_core_version=$(timeout 3 /etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
+		else
+			oc_core_version=$(/etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
+		fi
+	fi
+
+	for d in /etc/ShellCrash /usr/share/ShellCrash; do
+		if [ -d "$d" ]; then
+			sc_installed=1
+			sc_dir="$d"
+		fi
+	done
+	[ -x /usr/bin/crash ] && sc_installed=1
+	pidof mihomo >/dev/null 2>&1 && sc_running=1
+	pidof sing-box >/dev/null 2>&1 && sc_running=1
+
+	case "$action" in
+		status)
+			printf 'openclash_installed=%s\n' "$oc_installed"
+			printf 'openclash_running=%s\n' "$oc_running"
+			printf 'openclash_core=%s\n' "$oc_core"
+			printf 'openclash_version=%s\n' "$oc_version"
+			printf 'openclash_core_version=%s\n' "$oc_core_version"
+			printf 'shellcrash_installed=%s\n' "$sc_installed"
+			printf 'shellcrash_running=%s\n' "$sc_running"
+			printf 'shellcrash_dir=%s\n' "$sc_dir"
+			;;
+		*)
+			die "未知的 proxy 操作: $action"
+			;;
+	esac
+}
+
 cmd_reconnect() {
 	(
 		/sbin/ifup wan >/dev/null 2>&1
@@ -714,6 +764,7 @@ main() {
 		home) cmd_home ;;
 		clients) cmd_clients ;;
 		openclash) cmd_openclash "${2:-status}" ;;
+		proxy) cmd_proxy "${2:-status}" ;;
 		reconnect) cmd_reconnect ;;
 		help|-h|--help) usage ;;
 		*) usage; exit 1 ;;

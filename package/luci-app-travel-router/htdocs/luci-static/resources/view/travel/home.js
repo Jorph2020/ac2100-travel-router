@@ -101,9 +101,9 @@ return view.extend({
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '状态'),
 					E('span', {
-						'class': 'tr-pill ' + (s.openclash_running === '1' ? 'on' : 'off'),
+						'class': 'tr-pill ' + ((s.openclash_installed === '1' && s.openclash_running === '1') ? 'on' : 'off'),
 						'id': 'tr-oc-pill'
-					}, s.openclash_running === '1' ? '运行中' : '已停止')
+					}, s.openclash_installed !== '1' ? '未安装' : (s.openclash_running === '1' ? '运行中' : '已停止'))
 				]),
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '开机自启'),
@@ -223,8 +223,8 @@ return view.extend({
 
 				var pill = document.getElementById('tr-oc-pill');
 				if (pill) {
-					pill.textContent = (d.openclash_running === '1') ? '运行中' : '已停止';
-					pill.className = 'tr-pill ' + (d.openclash_running === '1' ? 'on' : 'off');
+					pill.textContent = (d.openclash_installed !== '1') ? '未安装' : ((d.openclash_running === '1') ? '运行中' : '已停止');
+					pill.className = 'tr-pill ' + ((d.openclash_installed === '1' && d.openclash_running === '1') ? 'on' : 'off');
 				}
 			}).catch(function() { /* transient errors while reloading are expected */ });
 		}, 15);

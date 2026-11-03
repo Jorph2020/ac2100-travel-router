@@ -128,6 +128,54 @@ nft list ruleset | grep -i clash  # firewall4/nftables 规则
 - 使用上游酒店/机场网络时，先完成 captive portal 认证，再启动 OpenClash。
 - 更新订阅/内核需要设备能直连 GitHub 或镜像；必要时在 OpenClash 中配置代理下载。
 
+## 轻量版（lite）与 ShellCrash
+
+lite 版不包含 OpenClash 和 Ruby，刷好后在 **应用** 页会看到 OpenClash“未安装”，
+下面有 ShellCrash 的安装说明和状态。
+
+### 安装 ShellCrash
+
+SSH 登录路由器：
+
+```sh
+ssh root@192.168.8.1
+```
+
+任选一个源：
+
+```sh
+# jsDelivr CDN（国内相对稳）
+export url='https://testingcf.jsdelivr.net/gh/juewuy/ShellCrash@master'
+sh -c "$(curl -kfsSl $url/install.sh)"
+. /etc/profile
+crash
+```
+
+或：
+
+```sh
+export url='https://raw.githubusercontent.com/juewuy/ShellCrash/master'
+sh -c "$(curl -kfsSl $url/install.sh)"
+. /etc/profile
+crash
+```
+
+安装时选择 **mihomo** 内核（mipsle-softfloat），然后 `crash` 进入菜单：
+
+- 导入订阅；
+- 设置规则/模式；
+- 启动并设置开机自启。
+
+需要约 1 MB 脚本空间 + 20–25 MB 内核空间；lite 版的空间足够。
+
+### 注意事项
+
+- **不要和 OpenClash 同时运行**；lite 版本身没有 OpenClash。
+- ShellCrash 没有 LuCI 页面，管理入口是 SSH 里的 `crash`。
+- 内核和规则同样吃内存，128 MB 设备仍然建议精简规则。
+- 路由器需要能访问 jsDelivr/GitHub；不行就在电脑下载 `install.sh` 和内核，
+  `scp` 到路由器本地安装。
+
 ## 客户端列表
 
 **客户端** 页显示 dnsmasq 租约（IP、MAC、主机名、租期）以及 Wi-Fi 关联信号。

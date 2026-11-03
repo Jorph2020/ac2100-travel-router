@@ -284,3 +284,16 @@
 	.tr-hero { flex-wrap: wrap; }
 	.tr-hero-ip { width: 100%; text-align: left; }
 }
+
+.tr-code {
+	margin: 10px 0;
+	padding: 12px 14px;
+	background: #101828;
+	color: #e4e7ec;
+	border-radius: 10px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre;
+	overflow-x: auto;
+}
