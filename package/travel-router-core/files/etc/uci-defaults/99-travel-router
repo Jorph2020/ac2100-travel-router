@@ -1,0 +1,91 @@
+#!/bin/sh
+# First boot defaults for the AC2100 travel router.
+#
+# This script is shipped by the travel-router-core package and executed once
+# by /etc/init.d/boot (uci-defaults) on the first boot after flashing.
+# A marker file prevents it from touching user settings on later boots.
+
+[ -f /etc/travel/configured ] && exit 0
+
+LAN_IP="192.168.8.1"
+HOSTNAME="AC2100-Travel"
+
+mkdir -p /etc/travel
+
+# Make sure the wireless configuration exists and radios were detected.
+if [ ! -f /etc/config/wireless ]; then
+	/sbin/wifi config >/dev/null 2>&1
+fi
+[ -f /etc/config/wireless ] || touch /etc/config/wireless
+
+# ---------------------------------------------------------------- network ---
+
+[ -n "$(uci -q get network.lan)" ] || uci set network.lan=interface
+uci set network.lan.proto='static'
+uci set network.lan.ipaddr="$LAN_IP"
+uci set network.lan.netmask='255.255.255.0'
+uci set network.lan.delegate='0'
+
+[ -n "$(uci -q get dhcp.lan)" ] || uci set dhcp.lan=dhcp
+uci set dhcp.lan.interface='lan'
+uci set dhcp.lan.start='100'
+uci set dhcp.lan.limit='150'
+uci set dhcp.lan.leasetime='12h'
+uci set dhcp.lan.ignore='0'
+
+# Make sure the WAN zone performs NAT for the repeater uplink.
+WAN_ZONE=$(uci show firewall 2>/dev/null | sed -n "s/^firewall\.\([^.]*\)\.name='wan'$/\1/p" | head -n1)
+if [ -n "$WAN_ZONE" ]; then
+	uci set "firewall.$WAN_ZONE.masq='1'"
+	uci set "firewall.$WAN_ZONE.mtu_fix='1'"
+fi
+
+# ----------------------------------------------------------------- system ---
+
+uci set system.@system[0].hostname="$HOSTNAME"
+uci set system.@system[0].description='Xiaomi AC2100 Travel Router'
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='Asia/Shanghai'
+
+uci -q delete system.ntp.server
+uci add_list system.ntp.server='ntp.aliyun.com'
+uci add_list system.ntp.server='time.cloudflare.com'
+uci add_list system.ntp.server='cn.pool.ntp.org'
+uci set system.ntp.enabled='1'
+uci set system.ntp.enable_server='0'
+
+uci -q get luci.main >/dev/null 2>&1 || uci set luci.main=core
+uci set luci.main.lang='zh_cn'
+
+# ------------------------------------------------------------------- wifi ---
+
+# Create/repair the AP interfaces.  This is idempotent and is retried on every
+# boot by /etc/init.d/travel-router, because the radios may not be detected
+# yet when uci-defaults run.
+if [ -x /usr/bin/travel-router ]; then
+	/usr/bin/travel-router setup --no-reload
+fi
+[ -x /etc/init.d/travel-router ] && /etc/init.d/travel-router enable
+
+# ---------------------------------------------------------------- OpenClash ---
+
+if [ -f /etc/config/openclash ]; then
+	uci -q get openclash.config >/dev/null 2>&1 || uci set openclash.config=openclash
+	uci set openclash.config.enable='0'
+	uci set openclash.config.config_path='/etc/openclash/config/00-gl-direct.yaml'
+fi
+
+# ------------------------------------------------------------------ commit ---
+
+uci commit network
+uci commit dhcp
+uci commit firewall
+uci commit system
+uci commit luci
+uci commit wireless
+[ -f /etc/config/openclash ] && uci commit openclash
+
+mkdir -p /etc/travel
+touch /etc/travel/configured
+
+exit 0

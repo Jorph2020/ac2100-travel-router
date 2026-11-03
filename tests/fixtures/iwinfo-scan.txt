@@ -1,0 +1,14 @@
+Cell 01 - Address: AA:BB:CC:DD:EE:01
+          ESSID: "MiFi-1234"
+          Mode: Master  Channel: 6  Signal: -45 dBm  Quality: 70/70
+          Encryption: WPA2 PSK (CCMP)
+
+Cell 02 - Address: AA:BB:CC:DD:EE:02
+          ESSID: "Home 5G"
+          Mode: Master  Channel: 149  Signal: -60 dBm  Quality: 55/70
+          Encryption: WPA2/WPA3 PSK/SAE (CCMP)
+
+Cell 03 - Address: AA:BB:CC:DD:EE:03
+          ESSID: "FreeWiFi"
+          Mode: Master  Channel: 11  Signal: -78 dBm  Quality: 30/70
+          Encryption: none

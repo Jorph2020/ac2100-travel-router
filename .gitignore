@@ -1,0 +1,9 @@
+# OpenWrt build tree and artifacts
+openwrt/
+out/
+build.log
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*.tmp

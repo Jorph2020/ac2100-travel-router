@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Re-apply the travel router Wi-Fi defaults after the radios are detected.
+#
+# uci-defaults runs very early during the first boot, possibly before the
+# mt76 drivers have registered their PHYs.  This service retries the
+# idempotent setup a few times so the AP interfaces always exist.
+
+START=99
+STOP=10
+
+boot() {
+	(
+		for i in 1 2 3 4 5 6; do
+			sleep 3
+			/usr/bin/travel-router setup >/dev/null 2>&1 && break
+		done
+	) &
+}
+
+start() {
+	/usr/bin/travel-router setup
+}
+
+stop() {
+	:
+}

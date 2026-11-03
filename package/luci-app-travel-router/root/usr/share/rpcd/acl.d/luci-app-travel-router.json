@@ -1,0 +1,17 @@
+{
+	"luci-app-travel-router": {
+		"description": "AC2100 travel router dashboard and Wi-Fi repeater wizard",
+		"read": {
+			"file": {
+				"/usr/bin/travel-router": [ "exec" ],
+				"/tmp/travel.scan": [ "read" ],
+				"/etc/travel/configured": [ "read" ]
+			}
+		},
+		"write": {
+			"file": {
+				"/tmp/travel.key": [ "write" ]
+			}
+		}
+	}
+}

@@ -1,0 +1,43 @@
+# Direct-only fallback configuration shipped with the AC2100 travel router.
+#
+# It is intentionally boring: every connection is routed directly, no proxy
+# is configured.  Enable OpenClash with this file to verify that the core and
+# the firewall integration work, then import your own subscription in
+# LuCI -> 应用 -> OpenClash and switch the active configuration.
+#
+# OpenClash rewrites ports, DNS and TUN settings at runtime according to its
+# own UCI options, so this file is only a starting point.
+
+port: 7890
+socks-port: 7891
+mixed-port: 7893
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+ipv6: false
+external-controller: 0.0.0.0:9090
+
+dns:
+  enable: true
+  listen: 0.0.0.0:7874
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+
+proxies: []
+
+proxy-groups:
+  - name: PROXY
+    type: select
+    proxies:
+      - DIRECT
+
+rules:
+  - MATCH,DIRECT
