@@ -9,6 +9,16 @@ PKGARCH:=all
 
 include $(INCLUDE_DIR)/package.mk
 
+# This package only ships scripts and configuration files.  Without an
+# explicit (empty) Build/Compile, the package infrastructure tries to run
+# make inside an empty build directory and fails with "No targets specified".
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+endef
+
+define Build/Compile
+endef
+
 define Package/travel-router-core
   SECTION:=net
   CATEGORY:=Network
