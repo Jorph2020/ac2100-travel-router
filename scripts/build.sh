@@ -67,6 +67,16 @@ else
 	log "Variant: lite (no OpenClash, use ShellCrash)"
 fi
 
+# A missing wpad or wireless driver would produce an image without Wi-Fi.
+grep -Eq '^CONFIG_PACKAGE_wpad-(mbedtls|basic-mbedtls)=y' .config \
+	|| die "No wpad selected; Wi-Fi would not work"
+grep -q '^CONFIG_PACKAGE_kmod-mt7603=y' .config \
+	|| die "kmod-mt7603 missing; 2.4 GHz would not work"
+grep -q '^CONFIG_PACKAGE_kmod-mt7615-firmware=y' .config \
+	|| die "kmod-mt7615-firmware missing; 5 GHz would not work"
+grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y' .config \
+	|| die "Chinese LuCI translation missing"
+
 log "Downloading sources (best effort)"
 make download -j"$JOBS" >/dev/null 2>&1 || true
 

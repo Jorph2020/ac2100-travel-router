@@ -335,7 +335,7 @@ cmd_scan() {
 # only default "OpenWrt" APs are adopted and missing APs are created.
 cmd_setup() {
 	local apply="${1:-}" radio band suffix ssid ap sec dev mode
-	local adopt radios=""
+	local adopt radios="" wait=0
 
 	radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
 
@@ -343,6 +343,15 @@ cmd_setup() {
 		/sbin/wifi config >/dev/null 2>&1
 		radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
 	fi
+
+	# On a fresh boot the mt76 PHYs may appear a few seconds after
+	# uci-defaults has started.  Wait for them instead of giving up.
+	while [ -z "$radios" ] && [ "$wait" -lt 10 ]; do
+		sleep 1
+		/sbin/wifi config >/dev/null 2>&1
+		radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
+		wait=$((wait + 1))
+	done
 
 	[ -n "$radios" ] || return 1
 

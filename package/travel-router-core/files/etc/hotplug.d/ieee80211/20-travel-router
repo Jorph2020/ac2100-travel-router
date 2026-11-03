@@ -1,0 +1,9 @@
+#!/bin/sh
+# A PHY was just registered (usually during boot).  Give wifi config a
+# moment to create the radio sections, then make sure our AP exists.
+[ "$ACTION" = "add" ] || exit 0
+
+(
+	sleep 2
+	/usr/bin/travel-router setup >/tmp/travel-hotplug.log 2>&1
+) &

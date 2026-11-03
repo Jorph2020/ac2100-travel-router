@@ -46,9 +46,22 @@ const uiStub = {
 const viewStub = { extend: obj => obj };
 const pollStub = { add: () => {} };
 
-const common = load('view/travel/common.js', {
-	E, L, document: documentStub, fs: fsStub, ui: uiStub
+const baseclassStub = {
+	extend: function(proto) {
+		function Cls() {}
+		Object.assign(Cls.prototype, proto);
+		return Cls;
+	}
+};
+
+const commonClass = load('view/travel/common.js', {
+	E, L, document: documentStub, baseclass: baseclassStub, fs: fsStub, ui: uiStub
 });
+
+if (typeof commonClass !== 'function')
+	throw new Error('common module must export a LuCI class');
+
+const common = new commonClass();
 
 const sampleHome = {
 	hostname: 'AC2100-Travel',

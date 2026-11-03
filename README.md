@@ -76,12 +76,11 @@ CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-ac2100=y
 ## 快速开始：用 GitHub Actions 编译
 
 1. 把本目录上传到一个 GitHub 仓库（公开或私有均可）。
-2. 打开仓库的 **Actions → Build AC2100 travel router firmware → Run workflow**。
-3. 在 **Run workflow** 里选择 `variant`：
+2. **推送到 `main` 会自动编译 lite 版**；也可以在 Actions 里手动 Run workflow：
    - `full`：内置 OpenClash（功能全，内存占用较高）
    - `lite`：不带 OpenClash/Ruby，刷机后自行安装 ShellCrash（更轻）
-4. 等待约 60–150 分钟（首次编译含工具链）。
-5. 在运行记录的 **Artifacts** 中下载 `ac2100-travel-router-<variant>-<run>`，解压后得到：
+3. 等待约 60–150 分钟（首次编译含工具链）。
+4. 在运行记录的 **Artifacts** 中下载 `ac2100-travel-router-lite-<run>`（或 `-full-`），解压后得到：
 
 ```
 openwrt-24.10.8-ramips-mt7621-xiaomi_redmi-router-ac2100-squashfs-sysupgrade.bin

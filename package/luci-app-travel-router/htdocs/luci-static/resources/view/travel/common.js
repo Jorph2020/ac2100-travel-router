@@ -1,4 +1,5 @@
 'use strict';
+'require baseclass';
 'require fs';
 'require ui';
 
@@ -179,7 +180,7 @@ function confirm(title, message, okLabel) {
 	});
 }
 
-return {
+return baseclass.extend({
 	exec: exec,
 	parseKV: parseKV,
 	parseTSV: parseTSV,
@@ -193,4 +194,4 @@ return {
 	esc: esc,
 	notify: notify,
 	confirm: confirm
-};
+});

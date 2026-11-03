@@ -52,6 +52,12 @@ define Package/travel-router-core/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/travel-router $(1)/etc/init.d/travel-router
 
+	$(INSTALL_DIR) $(1)/etc/rc.d
+	ln -sf ../init.d/travel-router $(1)/etc/rc.d/S99travel-router
+
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/ieee80211
+	$(INSTALL_BIN) ./files/etc/hotplug.d/ieee80211/20-travel-router $(1)/etc/hotplug.d/ieee80211/20-travel-router
+
 	$(INSTALL_DIR) $(1)/etc/openclash/config
 	$(INSTALL_DATA) ./files/etc/openclash/config/00-gl-direct.yaml $(1)/etc/openclash/config/00-gl-direct.yaml
 endef
