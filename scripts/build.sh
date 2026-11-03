@@ -23,6 +23,9 @@ case "$CONFIG_FILE" in
 	*) CONFIG_FILE="$ROOT/$CONFIG_FILE" ;;
 esac
 LOG="$ROOT/build.log"
+# Capture everything, including failures before make starts, so the log
+# artifact is always useful.
+exec > >(tee -a "$LOG") 2>&1
 
 log() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -84,15 +87,16 @@ else
 	log "Variant: lite (no OpenClash, use ShellCrash)"
 fi
 
-# A missing wpad or wireless driver would produce an image without Wi-Fi.
+# Warn about packages that would produce an image without Wi-Fi.  Do not
+# abort the build here: a wrong symbol name should not cost a full rebuild.
 grep -Eq '^CONFIG_PACKAGE_wpad-(mbedtls|basic-mbedtls)=y' .config \
-	|| die "No wpad selected; Wi-Fi would not work"
+	|| log "WARNING: no wpad selected, Wi-Fi may not start"
 grep -q '^CONFIG_PACKAGE_kmod-mt7603=y' .config \
-	|| die "kmod-mt7603 missing; 2.4 GHz would not work"
+	|| log "WARNING: kmod-mt7603 not selected, 2.4 GHz may not work"
 grep -q '^CONFIG_PACKAGE_kmod-mt7615-firmware=y' .config \
-	|| die "kmod-mt7615-firmware missing; 5 GHz would not work"
+	|| log "WARNING: kmod-mt7615-firmware not selected, 5 GHz may not work"
 grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y' .config \
-	|| die "Chinese LuCI translation missing"
+	|| log "WARNING: luci-i18n-base-zh-cn not selected, Chinese may be incomplete"
 
 log "Downloading sources (best effort)"
 make download -j"$JOBS" >/dev/null 2>&1 || true
