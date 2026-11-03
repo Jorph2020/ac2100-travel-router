@@ -95,8 +95,8 @@ grep -q '^CONFIG_PACKAGE_kmod-mt7603=y' .config \
 	|| log "WARNING: kmod-mt7603 not selected, 2.4 GHz may not work"
 grep -q '^CONFIG_PACKAGE_kmod-mt7615-firmware=y' .config \
 	|| log "WARNING: kmod-mt7615-firmware not selected, 5 GHz may not work"
-grep -q '^CONFIG_PACKAGE_luci-i18n-base-zh-cn=y' .config \
-	|| log "WARNING: luci-i18n-base-zh-cn not selected, Chinese may be incomplete"
+grep -q '^CONFIG_LUCI_LANG_zh_Hans=y' .config \
+	|| log "WARNING: CONFIG_LUCI_LANG_zh_Hans not selected, Chinese may be incomplete"
 
 log "Downloading sources (best effort)"
 make download -j"$JOBS" >/dev/null 2>&1 || true
