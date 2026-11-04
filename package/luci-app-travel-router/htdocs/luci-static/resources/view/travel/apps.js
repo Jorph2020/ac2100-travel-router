@@ -137,7 +137,29 @@ return view.extend({
 					E('span', { 'class': 'tr-value tr-mono' }, tr.text(s.shellcrash_dir || '—'))
 				]),
 				E('p', { 'class': 'tr-dim tr-small tr-mt' },
-					'ShellCrash 没有 LuCI 页面。SSH 登录路由器后输入 crash 进入管理菜单，可配置订阅、规则、内核和开机自启。'),
+					'ShellCrash 没有 LuCI 配置页，配置入口是 SSH 菜单。订阅、规则、内核切换都在下面的菜单里完成。'),
+				E('div', { 'class': 'tr-row' }, [
+					E('span', { 'class': 'tr-label' }, '当前内核'),
+					E('span', { 'class': 'tr-value tr-mono' },
+						tr.text((s.shellcrash_core || '—') + (s.shellcrash_core_version ? ' · ' + s.shellcrash_core_version : '')))
+				]),
+				E('div', { 'class': 'tr-row' }, [
+					E('span', { 'class': 'tr-label' }, '开机自启'),
+					E('span', { 'class': 'tr-value' }, s.shellcrash_autostart === '1' ? '已启用' : '未启用')
+				]),
+				E('h4', {}, '订阅配置（SSH）'),
+				E('pre', { 'class': 'tr-code' }, tr.text('ssh root@192.168.8.1\ncrash')),
+				E('ol', { 'class': 'tr-dim tr-small' }, [
+					E('li', {}, 'crash 进入菜单'),
+					E('li', {}, '6 配置文件管理 → a 添加订阅'),
+					E('li', {}, '填写名称和订阅链接 → a 保存 → 0 返回'),
+					E('li', {}, '1 启动/重启服务')
+				]),
+				E('h4', {}, '内核切换'),
+				E('p', { 'class': 'tr-dim tr-small' },
+					'crash → 9 更新与支持 → 2 切换/更新内核 → 1 Mihomo 或 2 SingBox，下载后会自动切换。'),
+				E('p', { 'class': 'tr-dim tr-small' },
+					'实测最小配置 RSS：Mihomo v1.19.17 ≈ 13.5 MB（当前默认，较省）；sing-box 1.13.0-alpha.27 ≈ 17.8 MB。实际占用会随订阅规则增加。'),
 				E('div', { 'class': 'tr-actions tr-mt' }, [
 					E('a', {
 						'class': 'cbi-button',

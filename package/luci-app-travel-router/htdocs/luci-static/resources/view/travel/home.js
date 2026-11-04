@@ -90,7 +90,7 @@ return view.extend({
 					E('strong', { 'id': 'tr-clients' }, tr.text(s.wifi_clients || '0')),
 					E('span', {}, ' 台在线')
 				]),
-				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text('DHCP 租约 ' + (s.clients || '0') + ' 条')),
+				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text('DHCP 租约 ' + (s.leases || '0') + ' 条 · 离线 ' + (s.clients_offline || '0') + ' 条')),
 				E('div', { 'class': 'tr-mt' }, E('a', {
 					'class': 'cbi-button',
 					'href': L.url('admin/clients')
@@ -117,8 +117,9 @@ return view.extend({
 				row('负载', s.load || '0', 'tr-load'),
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '内存'),
-					E('span', { 'class': 'tr-value', 'id': 'tr-mem' }, tr.text(s.mem_used + ' / ' + s.mem_total + ' MB'))
+					E('span', { 'class': 'tr-value', 'id': 'tr-mem' }, tr.text('已用 ' + s.mem_used + ' / ' + s.mem_total + ' MB（' + s.mem_pct + '%）'))
 				]),
+				E('div', { 'class': 'tr-dim tr-small', 'id': 'tr-mem-free' }, tr.text('空闲 ' + (s.mem_available || '—') + ' MB（' + Math.max(0, 100 - (parseInt(s.mem_pct, 10) || 0)) + '%）· zram 已用 ' + Math.max(0, (parseInt(s.swap_total, 10) || 0) - (parseInt(s.swap_free, 10) || 0)) + ' / ' + (s.swap_total || '—') + ' MB')),
 				E('div', { 'class': 'tr-bar' }, E('i', {
 					'id': 'tr-mem-bar',
 					'style': 'width:' + Math.min(parseInt(s.mem_pct, 10) || 0, 100) + '%'
@@ -203,10 +204,11 @@ return view.extend({
 				setText('tr-relay-state', relayStateLabel(d.relay_state));
 				setText('tr-relay-ip', d.relay_ip || '—');
 				setText('tr-clients', d.wifi_clients || '0');
-				setText('tr-leases', 'DHCP 租约 ' + (d.clients || '0') + ' 条');
+				setText('tr-leases', 'DHCP 租约 ' + (d.leases || '0') + ' 条 · 离线 ' + (d.clients_offline || '0') + ' 条');
 				setText('tr-uptime', tr.fmtUptime(d.uptime));
 				setText('tr-load', d.load || '0');
-				setText('tr-mem', d.mem_used + ' / ' + d.mem_total + ' MB');
+				setText('tr-mem', '已用 ' + d.mem_used + ' / ' + d.mem_total + ' MB（' + d.mem_pct + '%）');
+				setText('tr-mem-free', '空闲 ' + (d.mem_available || '—') + ' MB（' + Math.max(0, 100 - (parseInt(d.mem_pct, 10) || 0)) + '%）· zram 已用 ' + Math.max(0, (parseInt(d.swap_total, 10) || 0) - (parseInt(d.swap_free, 10) || 0)) + ' / ' + (d.swap_total || '—') + ' MB');
 
 				var heroEl = document.getElementById('tr-hero');
 				if (heroEl && on !== online) {
