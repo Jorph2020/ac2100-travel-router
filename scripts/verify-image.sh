@@ -49,6 +49,9 @@ need_file /usr/sbin/hostapd
 need_file /usr/bin/jq
 need_file /usr/sbin/umdns
 need_file /www/luci-static/resources/view/travel/clients.js
+need_file /etc/ShellCrash/menu.sh
+need_file /etc/ShellCrash/CrashCore.raw
+need_file /etc/ShellCrash/ui/index.html
 need_file /etc/init.d/travel-router
 need_link /etc/rc.d/S99travel-router
 need_file /etc/hotplug.d/ieee80211/20-travel-router

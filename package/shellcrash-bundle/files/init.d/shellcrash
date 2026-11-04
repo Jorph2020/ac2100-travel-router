@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+CRASHDIR=/etc/ShellCrash
+
+start() {
+	[ -x "$CRASHDIR/start.sh" ] && "$CRASHDIR/start.sh" start >/tmp/shellcrash-boot.log 2>&1
+}
+
+stop() {
+	[ -x "$CRASHDIR/start.sh" ] && "$CRASHDIR/start.sh" stop >/dev/null 2>&1
+}
+
+restart() {
+	stop
+	start
+}

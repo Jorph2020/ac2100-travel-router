@@ -1,0 +1,14 @@
+mixed-port: 7890
+redir-port: 7892
+tproxy-port: 7893
+allow-lan: true
+mode: rule
+log-level: info
+ipv6: true
+external-controller: :9999
+external-ui: ui
+secret: 12345678
+proxies: []
+proxy-groups: []
+rules:
+  - MATCH,DIRECT
