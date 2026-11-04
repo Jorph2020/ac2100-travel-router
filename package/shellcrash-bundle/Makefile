@@ -58,6 +58,7 @@ define Package/shellcrash-bundle/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/core-sing/CrashCore $(1)/etc/ShellCrash/CrashCore.singbox
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/Country.mmdb $(1)/etc/ShellCrash/Country.mmdb
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/geosite.dat $(1)/etc/ShellCrash/geosite.dat
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/init.d/shellcrash $(1)/etc/init.d/shellcrash
 	$(INSTALL_DIR) $(1)/etc/rc.d
 	ln -sf ../init.d/shellcrash $(1)/etc/rc.d/S99shellcrash
