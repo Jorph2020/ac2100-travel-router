@@ -22,6 +22,8 @@ function clientRow(c) {
 	var lease = c[5];
 	var online = isOnline(c);
 	var connected = parseInt(c[7], 10) || 0;
+	var kind = c[8] || (online ? 'wifi' : 'offline');
+	var kindLabel = (kind === 'wired') ? '有线' : ((kind === 'wifi') ? 'Wi-Fi' : '离线');
 
 	return E('tr', {}, [
 		E('td', {}, [
@@ -31,15 +33,15 @@ function clientRow(c) {
 		E('td', {}, tr.text(ip)),
 		E('td', { 'class': 'tr-mono' }, tr.text(mac)),
 		E('td', {}, online
-			? E('span', { 'class': 'tr-pill on' }, '在线')
+			? E('span', { 'class': 'tr-pill on' }, kindLabel)
 			: E('span', { 'class': 'tr-pill off' }, '离线')),
-		E('td', {}, (online && signal)
+		E('td', {}, (kind === 'wifi' && signal)
 			? E('span', {}, [
 				tr.bars(signal),
 				E('span', { 'class': 'tr-dim tr-ml tr-small' }, tr.text(signal + ' dBm'))
 			])
 			: E('span', { 'class': 'tr-dim' }, '—')),
-		E('td', {}, online
+		E('td', {}, (kind === 'wifi' && online)
 			? tr.text(connected ? tr.fmtUptime(connected) : '刚刚')
 			: E('span', { 'class': 'tr-dim' }, '—')),
 		E('td', {}, tr.text(tr.fmtLease(lease)))
@@ -92,7 +94,7 @@ return view.extend({
 						E('th', {}, '主机名'),
 						E('th', {}, 'IP 地址'),
 						E('th', {}, 'MAC'),
-						E('th', {}, '状态'),
+						E('th', {}, '接入方式'),
 						E('th', {}, '信号'),
 						E('th', {}, '已连接'),
 						E('th', {}, '租期剩余')

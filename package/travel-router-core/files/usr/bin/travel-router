@@ -715,11 +715,12 @@ cmd_home() {
 # ---------------------------------------------------------------- clients ---
 
 cmd_clients() {
-	local dev now assoc mdns conn namecache tab
+	local dev now assoc mdns conn namecache wire tab
 	now=$(date +%s)
 	assoc="/tmp/travel.assoc.$$"
 	mdns="/tmp/travel.mdns.$$"
 	conn="/tmp/travel.conn.$$"
+	wire="/tmp/travel.wire.$$"
 	namecache="/etc/travel/mdns.names"
 	mkdir -p /etc/travel
 	touch "$namecache"
@@ -727,6 +728,7 @@ cmd_clients() {
 	: > "$assoc"
 	: > "$mdns"
 	: > "$conn"
+	: > "$wire"
 
 	for dev in $(ap_ifnames); do
 		iwinfo "$dev" assoclist 2>/dev/null | awk -v d="$dev" \
@@ -740,6 +742,25 @@ cmd_clients() {
 			/connected time:/ { print tolower(mac) "\t" $3 }
 		' >> "$conn"
 	done
+
+	# Wired clients: DHCP leases plus the bridge forwarding table.
+	# Wi-Fi clients are already in $assoc; ports lan*/eth* are wired.
+	if command -v bridge >/dev/null 2>&1; then
+		bridge fdb show br br-lan 2>/dev/null | awk '
+			$2 == "dev" && $3 ~ /^(lan|eth)/ {
+				print tolower($1) "\t" $3
+			}
+		' >> "$wire"
+	fi
+	if [ ! -s "$wire" ] && [ -f /tmp/dhcp.leases ]; then
+		while read -r _exp mac ip _host _rest; do
+			grep -q "^$mac " "$assoc" && continue
+			state=$(ip neigh show "$ip" 2>/dev/null | awk '{ print $NF }')
+			case "$state" in
+				REACHABLE|DELAY|PROBE) printf '%s\twired\n' "$mac" >> "$wire" ;;
+			esac
+		done < /tmp/dhcp.leases
+	fi
 
 	# Resolve device names advertised over mDNS (iPhone/iPad/Mac/Apple TV...).
 	if command -v jq >/dev/null 2>&1 && ubus list 2>/dev/null | grep -qx umdns; then
@@ -778,9 +799,10 @@ cmd_clients() {
 	fi
 
 	if [ -f /tmp/dhcp.leases ]; then
-		awk -v now="$now" -v af="$assoc" -v mf="$mdns" -v cf="$conn" -v nf="$namecache" '
+		awk -v now="$now" -v af="$assoc" -v mf="$mdns" -v cf="$conn" -v wf="$wire" -v nf="$namecache" '
 			FILENAME == af { sig[tolower($1)] = $2; ifc[tolower($1)] = $3; next }
 			FILENAME == cf { age[tolower($1)] = $2 + 0; next }
+			FILENAME == wf { wired[tolower($1)] = 1; wport[tolower($1)] = $2; next }
 			FILENAME == mf { name[$1] = $2; next }
 			FILENAME == nf { cached[tolower($1)] = $2; next }
 			NF >= 4 {
@@ -789,16 +811,21 @@ cmd_clients() {
 				else if (name[ip] != "") host = name[ip]
 				if (host == "*" || host == "?" || host == "") host = "未知设备"
 				left = (expiry > 0) ? int((expiry - now) / 60) : -1
-				online = (mac in sig) ? 1 : 0
-				connected = (mac in age) ? age[mac] : 0
-				key = (1 - online) "\t" (999999999 - connected)
-				print key "\t" ip "\t" mac "\t" host "\t" sig[mac] "\t" ifc[mac] "\t" left "\t" online "\t" connected
+				if (mac in sig) kind = "wifi"
+				else if (mac in wired) kind = "wired"
+				else kind = "offline"
+				online = (kind == "offline") ? 0 : 1
+				connected = (kind == "wifi" && (mac in age)) ? age[mac] : 0
+				iface = (kind == "wifi") ? ifc[mac] : ((kind == "wired") ? wport[mac] : "")
+				prio = (kind == "wifi") ? 0 : ((kind == "wired") ? 1 : 2)
+				key = (1 - online) "\t" prio "\t" (999999999 - connected)
+				print key "\t" ip "\t" mac "\t" host "\t" sig[mac] "\t" iface "\t" left "\t" online "\t" connected "\t" kind
 			}
-		' "$assoc" "$conn" "$mdns" "$namecache" /tmp/dhcp.leases \
-			| sort | cut -f3-
+		' "$assoc" "$conn" "$wire" "$mdns" "$namecache" /tmp/dhcp.leases \
+			| sort | cut -f4-
 	fi
 
-	rm -f "$assoc" "$mdns" "$conn"
+	rm -f "$assoc" "$mdns" "$conn" "$wire"
 }
 
 # --------------------------------------------------------------- OpenClash ---
