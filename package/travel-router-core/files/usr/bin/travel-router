@@ -524,7 +524,7 @@ shellcrash_api_base() {
 	local hostdir port
 	hostdir=$(sed -n "s/^hostdir='\(.*\)'$/\1/p" /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)
 	port=$(printf '%s' "$hostdir" | sed -n 's/^:\([0-9][0-9]*\).*/\1/p')
-	[ -n "$port" ] || port=9999
+	[ -n "$port" ] || port=9998
 	printf '127.0.0.1:%s' "$port"
 }
 
@@ -536,7 +536,7 @@ shellcrash_yacd_url() {
 	local lan="${1:-192.168.8.1}" hostdir port secret
 	hostdir=$(sed -n "s/^hostdir='\(.*\)'$/\1/p" /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)
 	port=$(printf '%s' "$hostdir" | sed -n 's/^:\([0-9][0-9]*\).*/\1/p')
-	[ -n "$port" ] || port=9999
+	[ -n "$port" ] || port=9998
 	secret=$(shellcrash_api_secret)
 	printf 'http://%s:%s/ui/?hostname=%s&port=%s&secret=%s' "$lan" "$port" "$lan" "$port" "$secret"
 }

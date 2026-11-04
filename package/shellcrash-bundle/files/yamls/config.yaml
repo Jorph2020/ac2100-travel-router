@@ -5,7 +5,7 @@ allow-lan: true
 mode: rule
 log-level: info
 ipv6: true
-external-controller: :9999
+external-controller: :9998
 external-ui: ui
 secret: 12345678
 proxies: []
