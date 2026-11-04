@@ -526,7 +526,7 @@ cmd_home() {
 	local hostname model firmware uptime_s load mem_total mem_avail
 	local mem_used mem_total_mb mem_pct def_dev uplink wan_ip
 	local status_out ssid signal quality relay_ip relay_state
-	local clients wifi_clients oc_running oc_enabled oc_installed rootpw lan_ip ssid_2g ssid_5g
+	local clients wifi_clients oc_running oc_enabled oc_installed sc_installed sc_running rootpw lan_ip ssid_2g ssid_5g
 	local shadow dev sta
 
 	hostname=$(uci_get system.@system[0].hostname)
@@ -571,10 +571,16 @@ cmd_home() {
 
 	clients=0
 	[ -f /tmp/dhcp.leases ] && clients=$(grep -c . /tmp/dhcp.leases 2>/dev/null)
-	wifi_clients=0
+	# Count unique associated stations. iwinfo prints 3-4 lines per station,
+	# so counting lines (the old behaviour) massively over-reported clients.
+	_assoc_tmp=/tmp/.travel-router-assoc.$$
+	: > "$_assoc_tmp"
 	for dev in $(ap_ifnames); do
-		wifi_clients=$((wifi_clients + $(iwinfo "$dev" assoclist 2>/dev/null | grep -c .)))
+		iwinfo "$dev" assoclist 2>/dev/null \
+			| grep -oE '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' >> "$_assoc_tmp"
 	done
+	wifi_clients=$(sort -u "$_assoc_tmp" | grep -c .)
+	rm -f "$_assoc_tmp"
 
 	oc_running=0
 	pidof clash >/dev/null 2>&1 && oc_running=1
@@ -582,6 +588,12 @@ cmd_home() {
 	[ -f /etc/config/openclash ] && oc_installed=1
 	oc_enabled=$(uci_get openclash.config.enable)
 	[ -n "$oc_enabled" ] || oc_enabled=0
+
+	sc_installed=0
+	[ -d /etc/ShellCrash ] && sc_installed=1
+	sc_running=0
+	pidof CrashCore >/dev/null 2>&1 && sc_running=1
+	pidof mihomo >/dev/null 2>&1 && sc_running=1
 
 	rootpw=0
 	shadow=$(awk -F: '$1 == "root" { print $2 }' /etc/shadow 2>/dev/null)
@@ -617,6 +629,8 @@ cmd_home() {
 	printf 'openclash_installed=%s\n' "$oc_installed"
 	printf 'openclash_running=%s\n' "$oc_running"
 	printf 'openclash_enabled=%s\n' "$oc_enabled"
+	printf 'shellcrash_installed=%s\n' "$sc_installed"
+	printf 'shellcrash_running=%s\n' "$sc_running"
 	printf 'rootpw=%s\n' "$rootpw"
 	printf 'lan_ip=%s\n' "${lan_ip:-192.168.8.1}"
 	printf 'ssid_2g=%s\n' "$ssid_2g"

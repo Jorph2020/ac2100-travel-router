@@ -85,31 +85,27 @@ return view.extend({
 				'href': L.url('admin/internet/repeater')
 			}, '设置 ›')),
 
-			card('客户端', E('div', {}, [
+			card('Wi-Fi 客户端', E('div', {}, [
 				E('div', { 'class': 'tr-metric' }, [
-					E('strong', { 'id': 'tr-clients' }, tr.text(s.clients || '0')),
-					E('span', {}, ' 台设备')
+					E('strong', { 'id': 'tr-clients' }, tr.text(s.wifi_clients || '0')),
+					E('span', {}, ' 台在线')
 				]),
-				E('div', { 'class': 'tr-dim' }, tr.text('Wi-Fi 在线 ' + (s.wifi_clients || '0') + ' 台')),
+				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text('DHCP 租约 ' + (s.clients || '0') + ' 条')),
 				E('div', { 'class': 'tr-mt' }, E('a', {
 					'class': 'cbi-button',
 					'href': L.url('admin/clients')
 				}, '查看客户端'))
 			])),
 
-			card('OpenClash', E('div', {}, [
+			card('ShellCrash', E('div', {}, [
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '状态'),
 					E('span', {
-						'class': 'tr-pill ' + ((s.openclash_installed === '1' && s.openclash_running === '1') ? 'on' : 'off'),
-						'id': 'tr-oc-pill'
-					}, s.openclash_installed !== '1' ? '未安装' : (s.openclash_running === '1' ? '运行中' : '已停止'))
+						'class': 'tr-pill ' + ((s.shellcrash_installed === '1' && s.shellcrash_running === '1') ? 'on' : 'off'),
+						'id': 'tr-sc-pill'
+					}, s.shellcrash_installed !== '1' ? '未安装' : (s.shellcrash_running === '1' ? '运行中' : '已停止'))
 				]),
-				E('div', { 'class': 'tr-row' }, [
-					E('span', { 'class': 'tr-label' }, '开机自启'),
-					E('span', { 'class': 'tr-value' }, s.openclash_enabled === '1' ? '已启用' : '未启用')
-				]),
-				E('div', { 'class': 'tr-dim tr-mt' }, '订阅、规则与内核由 OpenClash 管理。'),
+				E('div', { 'class': 'tr-dim tr-mt' }, '轻量代理，订阅与规则在 ShellCrash 菜单中管理。'),
 				E('div', { 'class': 'tr-mt' }, E('a', {
 					'class': 'cbi-button',
 					'href': L.url('admin/apps')
@@ -206,7 +202,8 @@ return view.extend({
 				setText('tr-relay-signal', d.relay_signal ? (d.relay_signal + ' dBm') : '—');
 				setText('tr-relay-state', relayStateLabel(d.relay_state));
 				setText('tr-relay-ip', d.relay_ip || '—');
-				setText('tr-clients', d.clients || '0');
+				setText('tr-clients', d.wifi_clients || '0');
+				setText('tr-leases', 'DHCP 租约 ' + (d.clients || '0') + ' 条');
 				setText('tr-uptime', tr.fmtUptime(d.uptime));
 				setText('tr-load', d.load || '0');
 				setText('tr-mem', d.mem_used + ' / ' + d.mem_total + ' MB');
