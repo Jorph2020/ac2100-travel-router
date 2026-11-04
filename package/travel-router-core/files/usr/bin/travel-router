@@ -520,6 +520,27 @@ cmd_forget() {
 	echo "ok"
 }
 
+shellcrash_api_base() {
+	local hostdir port
+	hostdir=$(sed -n "s/^hostdir='\(.*\)'$/\1/p" /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)
+	port=$(printf '%s' "$hostdir" | sed -n 's/^:\([0-9][0-9]*\).*/\1/p')
+	[ -n "$port" ] || port=9999
+	printf '127.0.0.1:%s' "$port"
+}
+
+shellcrash_api_secret() {
+	sed -n 's/^secret=//p' /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1
+}
+
+shellcrash_yacd_url() {
+	local lan="${1:-192.168.8.1}" hostdir port secret
+	hostdir=$(sed -n "s/^hostdir='\(.*\)'$/\1/p" /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)
+	port=$(printf '%s' "$hostdir" | sed -n 's/^:\([0-9][0-9]*\).*/\1/p')
+	[ -n "$port" ] || port=9999
+	secret=$(shellcrash_api_secret)
+	printf 'http://%s:%s/ui/?hostname=%s&port=%s&secret=%s' "$lan" "$port" "$lan" "$port" "$secret"
+}
+
 # ------------------------------------------------------------------- home ---
 
 cmd_home() {
@@ -527,6 +548,7 @@ cmd_home() {
 	local mem_used mem_total_mb mem_pct mem_available_mb swap_total swap_free def_dev uplink wan_ip
 	local status_out ssid signal quality relay_ip relay_state
 	local clients clients_offline leases wifi_clients oc_running oc_enabled oc_installed sc_installed sc_running rootpw lan_ip ssid_2g ssid_5g
+	local proxy_group proxy_node proxy_delay yacd_url sc_base sc_secret sc_data
 	local shadow dev sta
 
 	hostname=$(uci_get system.@system[0].hostname)
@@ -611,6 +633,26 @@ cmd_home() {
 	pidof CrashCore >/dev/null 2>&1 && sc_running=1
 	pidof mihomo >/dev/null 2>&1 && sc_running=1
 
+	proxy_group=""
+	proxy_node=""
+	proxy_delay=""
+	if [ "$sc_running" = "1" ] && command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+		sc_base=$(shellcrash_api_base)
+		sc_secret=$(shellcrash_api_secret)
+		sc_data=$(curl -s --max-time 2 -H "Authorization: Bearer $sc_secret" "http://$sc_base/proxies" 2>/dev/null)
+		proxy_group=$(printf '%s' "$sc_data" | jq -r '(.proxies | to_entries | map(select(.value.type == "Selector" and .key != "GLOBAL" and ((.value.now // "") != ""))) | .[0].key) // empty' 2>/dev/null)
+		[ -n "$proxy_group" ] || proxy_group="GLOBAL"
+		proxy_node=$(printf '%s' "$sc_data" | jq -r --arg g "$proxy_group" '.proxies[$g].now // empty' 2>/dev/null)
+		i=0
+		while [ -n "$proxy_node" ] && [ "$i" -lt 5 ]; do
+			next=$(printf '%s' "$sc_data" | jq -r --arg n "$proxy_node" '.proxies[$n].now // empty' 2>/dev/null)
+			[ -n "$next" ] && [ "$next" != "$proxy_node" ] || break
+			proxy_node="$next"
+			i=$((i + 1))
+		done
+		proxy_delay=$(printf '%s' "$sc_data" | jq -r --arg n "$proxy_node" '(.proxies[$n].history // []) | last | .delay // empty' 2>/dev/null)
+	fi
+
 	rootpw=0
 	shadow=$(awk -F: '$1 == "root" { print $2 }' /etc/shadow 2>/dev/null)
 	if [ -n "$shadow" ]; then
@@ -621,6 +663,7 @@ cmd_home() {
 	fi
 
 	lan_ip=$(uci_get network.lan.ipaddr)
+	yacd_url=$(shellcrash_yacd_url "${lan_ip:-192.168.8.1}")
 	ssid_2g=$(ap_ssid_by_band 2g)
 	ssid_5g=$(ap_ssid_by_band 5g)
 
@@ -653,6 +696,10 @@ cmd_home() {
 	printf 'openclash_enabled=%s\n' "$oc_enabled"
 	printf 'shellcrash_installed=%s\n' "$sc_installed"
 	printf 'shellcrash_running=%s\n' "$sc_running"
+	printf 'proxy_group=%s\n' "$proxy_group"
+	printf 'proxy_node=%s\n' "$proxy_node"
+	printf 'proxy_delay=%s\n' "$proxy_delay"
+	printf 'yacd_url=%s\n' "$yacd_url"
 	printf 'rootpw=%s\n' "$rootpw"
 	printf 'lan_ip=%s\n' "${lan_ip:-192.168.8.1}"
 	printf 'ssid_2g=%s\n' "$ssid_2g"
@@ -806,7 +853,7 @@ cmd_openclash() {
 cmd_proxy() {
 	local action="${1:-status}" d
 	local oc_installed=0 oc_running=0 oc_core=0 oc_version="" oc_core_version=""
-	local sc_installed=0 sc_running=0 sc_dir="" sc_core="" sc_core_version="" sc_autostart=0
+	local sc_installed=0 sc_running=0 sc_dir="" sc_core="" sc_core_version="" sc_autostart=0 yacd_url=""
 
 	[ -f /etc/config/openclash ] && oc_installed=1
 	pidof clash >/dev/null 2>&1 && oc_running=1
@@ -849,6 +896,8 @@ cmd_proxy() {
 			printf 'shellcrash_core=%s\n' "$sc_core"
 			printf 'shellcrash_core_version=%s\n' "$sc_core_version"
 			printf 'shellcrash_autostart=%s\n' "$sc_autostart"
+			yacd_url=$(shellcrash_yacd_url "$(uci_get network.lan.ipaddr)")
+			printf 'yacd_url=%s\n' "$yacd_url"
 			;;
 		*)
 			die "未知的 proxy 操作: $action"

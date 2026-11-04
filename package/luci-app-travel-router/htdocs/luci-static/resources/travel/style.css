@@ -297,3 +297,22 @@
 	white-space: pre;
 	overflow-x: auto;
 }
+
+/* Compact Yacd node preview inside the ShellCrash card */
+.tr-yacd {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid #eef1f5;
+}
+
+.tr-yacd .tr-row {
+	padding: 5px 0;
+	font-size: 12.5px;
+}
+
+.tr-yacd .tr-value {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 62%;
+}

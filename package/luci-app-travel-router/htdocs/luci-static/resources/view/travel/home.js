@@ -105,11 +105,33 @@ return view.extend({
 						'id': 'tr-sc-pill'
 					}, s.shellcrash_installed !== '1' ? '未安装' : (s.shellcrash_running === '1' ? '运行中' : '已停止'))
 				]),
-				E('div', { 'class': 'tr-dim tr-mt' }, '轻量代理，订阅与规则在 ShellCrash 菜单中管理。'),
-				E('div', { 'class': 'tr-mt' }, E('a', {
-					'class': 'cbi-button',
-					'href': L.url('admin/apps')
-				}, '打开应用'))
+				E('div', { 'class': 'tr-yacd' }, [
+					E('div', { 'class': 'tr-row' }, [
+						E('span', { 'class': 'tr-label' }, '代理组'),
+						E('span', { 'class': 'tr-value', 'id': 'tr-proxy-group' }, tr.text(s.proxy_group || '—'))
+					]),
+					E('div', { 'class': 'tr-row' }, [
+						E('span', { 'class': 'tr-label' }, '节点'),
+						E('span', { 'class': 'tr-value', 'id': 'tr-proxy-node' }, tr.text(s.proxy_node || '—'))
+					]),
+					E('div', { 'class': 'tr-row' }, [
+						E('span', { 'class': 'tr-label' }, '延迟'),
+						E('span', { 'class': 'tr-value', 'id': 'tr-proxy-delay' },
+							tr.text(s.proxy_delay ? (s.proxy_delay + ' ms') : '—'))
+					])
+				]),
+				E('div', { 'class': 'tr-actions tr-mt' }, [
+					E('a', {
+						'class': 'cbi-button cbi-button-action',
+						'href': s.yacd_url || '#',
+						'target': '_blank',
+						'rel': 'noopener'
+					}, '打开 Yacd'),
+					E('a', {
+						'class': 'tr-link',
+						'href': L.url('admin/apps')
+					}, 'ShellCrash 设置')
+				])
 			])),
 
 			card('系统', E('div', {}, [
@@ -204,6 +226,9 @@ return view.extend({
 				setText('tr-relay-state', relayStateLabel(d.relay_state));
 				setText('tr-relay-ip', d.relay_ip || '—');
 				setText('tr-clients', d.wifi_clients || '0');
+				setText('tr-proxy-group', d.proxy_group || '—');
+				setText('tr-proxy-node', d.proxy_node || '—');
+				setText('tr-proxy-delay', d.proxy_delay ? (d.proxy_delay + ' ms') : '—');
 				setText('tr-leases', 'DHCP 租约 ' + (d.leases || '0') + ' 条 · 离线 ' + (d.clients_offline || '0') + ' 条');
 				setText('tr-uptime', tr.fmtUptime(d.uptime));
 				setText('tr-load', d.load || '0');

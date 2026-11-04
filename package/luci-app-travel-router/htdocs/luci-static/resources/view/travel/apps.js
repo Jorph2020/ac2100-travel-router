@@ -184,6 +184,12 @@ return view.extend({
 					'实测最小配置 RSS：Mihomo v1.19.17 ≈ 13.5 MB（当前默认，较省）；sing-box 1.13.0-alpha.27 ≈ 17.8 MB。实际占用会随订阅规则增加。'),
 				E('div', { 'class': 'tr-actions tr-mt' }, [
 					E('a', {
+						'class': 'cbi-button cbi-button-action',
+						'href': s.yacd_url || '#',
+						'target': '_blank',
+						'rel': 'noopener'
+					}, '打开 Yacd 面板'),
+					E('a', {
 						'class': 'cbi-button',
 						'href': SHELLCRASH_URL,
 						'target': '_blank',
