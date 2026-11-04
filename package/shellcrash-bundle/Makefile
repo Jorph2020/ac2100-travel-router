@@ -60,8 +60,8 @@ define Package/shellcrash-bundle/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/geosite.dat $(1)/etc/ShellCrash/geosite.dat
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/init.d/shellcrash $(1)/etc/init.d/shellcrash
-	$(INSTALL_DIR) $(1)/etc/rc.d
-	ln -sf ../init.d/shellcrash $(1)/etc/rc.d/S99shellcrash
+	# Deliberately not enabling autostart: Wi-Fi must come up first.
+	# The user starts ShellCrash manually from the apps page.
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/usr/bin/crash $(1)/usr/bin/crash
 	$(INSTALL_DIR) $(1)/etc/profile.d
