@@ -21,6 +21,7 @@ function clientRow(c) {
 	var iface = c[4] || '';
 	var lease = c[5];
 	var online = isOnline(c);
+	var connected = parseInt(c[7], 10) || 0;
 
 	return E('tr', {}, [
 		E('td', {}, [
@@ -37,6 +38,9 @@ function clientRow(c) {
 				tr.bars(signal),
 				E('span', { 'class': 'tr-dim tr-ml tr-small' }, tr.text(signal + ' dBm'))
 			])
+			: E('span', { 'class': 'tr-dim' }, '—')),
+		E('td', {}, online
+			? tr.text(connected ? tr.fmtUptime(connected) : '刚刚')
 			: E('span', { 'class': 'tr-dim' }, '—')),
 		E('td', {}, tr.text(tr.fmtLease(lease)))
 	]);
@@ -90,6 +94,7 @@ return view.extend({
 						E('th', {}, 'MAC'),
 						E('th', {}, '状态'),
 						E('th', {}, '信号'),
+						E('th', {}, '已连接'),
 						E('th', {}, '租期剩余')
 					])),
 					body

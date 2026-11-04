@@ -46,6 +46,9 @@ need_link() {
 
 need_file /usr/sbin/wpad
 need_file /usr/sbin/hostapd
+need_file /usr/bin/jq
+need_file /usr/sbin/umdns
+need_file /www/luci-static/resources/view/travel/clients.js
 need_file /etc/init.d/travel-router
 need_link /etc/rc.d/S99travel-router
 need_file /etc/hotplug.d/ieee80211/20-travel-router
@@ -67,6 +70,18 @@ fi
 for fw in /lib/firmware/mediatek/mt7615_n9.bin /lib/firmware/mediatek/mt7615_cr4.bin /lib/firmware/mt7603_e2.bin; do
 	need_file "$fw"
 done
+
+if ! grep -q 'umdns' "$R/usr/bin/travel-router"; then
+	echo "MISS travel-router mDNS name support"; fail=1
+else
+	echo "OK   travel-router mDNS"
+fi
+
+if ! grep -q 'connected time' "$R/usr/bin/travel-router"; then
+	echo "MISS travel-router connected-time sorting"; fail=1
+else
+	echo "OK   connected-time sorting"
+fi
 
 if ! grep -q 'baseclass.extend' "$R/www/luci-static/resources/view/travel/common.js"; then
 	echo "MISS common.js is not a LuCI class"; fail=1

@@ -22,7 +22,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -75,6 +75,16 @@ jobs:
           path: out/*
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish firmware release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" out/* \
+            --title "AC2100 lite build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automatic lite firmware build from ${GITHUB_SHA}. Flash the squashfs-sysupgrade.bin only." \
+            --latest
 
       - name: Upload build log on failure
         if: failure()

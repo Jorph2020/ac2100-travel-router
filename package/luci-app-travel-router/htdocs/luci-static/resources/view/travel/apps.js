@@ -37,6 +37,18 @@ return view.extend({
 		var scInstalled = s.shellcrash_installed === '1';
 		var scRunning = s.shellcrash_running === '1';
 
+		function switchCore(core, btn) {
+			if (btn) btn.disabled = true;
+			tr.notify('正在切换 ' + core + ' 内核…');
+			tr.exec(['shellcrash', 'core', core]).then(function() {
+				tr.notify('内核已切换，正在重载…', 'info');
+				window.setTimeout(function() { location.reload(); }, 1500);
+			}).catch(function(e) {
+				tr.notify(e.message, 'danger');
+				if (btn) btn.disabled = false;
+			});
+		}
+
 		function refreshOpenClash(expectRunning) {
 			var tries = 0;
 			var timer = window.setInterval(function() {
@@ -142,6 +154,16 @@ return view.extend({
 					E('span', { 'class': 'tr-label' }, '当前内核'),
 					E('span', { 'class': 'tr-value tr-mono' },
 						tr.text((s.shellcrash_core || '—') + (s.shellcrash_core_version ? ' · ' + s.shellcrash_core_version : '')))
+				]),
+				E('div', { 'class': 'tr-actions tr-mt' }, [
+					E('button', {
+						'class': 'cbi-button cbi-button-action',
+						'click': function(ev) { switchCore('mihomo', ev.target); }
+					}, '切换 Mihomo'),
+					E('button', {
+						'class': 'cbi-button',
+						'click': function(ev) { switchCore('singbox', ev.target); }
+					}, '切换 sing-box')
 				]),
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '开机自启'),

@@ -32,6 +32,9 @@ uci set dhcp.lan.start='100'
 uci set dhcp.lan.limit='150'
 uci set dhcp.lan.leasetime='12h'
 uci set dhcp.lan.ignore='0'
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ra='disabled'
+uci set dhcp.lan.ndp='disabled'
 
 # Make sure the WAN zone performs NAT for the repeater uplink.
 WAN_ZONE=$(uci show firewall 2>/dev/null | sed -n "s/^firewall\.\([^.]*\)\.name='wan'$/\1/p" | head -n1)
@@ -46,6 +49,8 @@ uci set system.@system[0].hostname="$HOSTNAME"
 uci set system.@system[0].description='Xiaomi AC2100 Travel Router'
 uci set system.@system[0].timezone='CST-8'
 uci set system.@system[0].zonename='Asia/Shanghai'
+uci set system.@system[0].zram_size_mb='96'
+uci set system.@system[0].zram_comp_algo='lzo-rle'
 
 uci -q delete system.ntp.server
 uci add_list system.ntp.server='ntp.aliyun.com'
@@ -74,6 +79,18 @@ if [ -f /etc/config/openclash ]; then
 	uci set openclash.config.enable='0'
 	uci set openclash.config.config_path='/etc/openclash/config/00-gl-direct.yaml'
 fi
+
+# mDNS lets us show iPhone/iPad/Mac names in the client list.
+if [ -x /etc/init.d/umdns ]; then
+	uci -q get umdns.@umdns[0] >/dev/null 2>&1 || uci set umdns.@umdns[0]=umdns
+	uci set umdns.@umdns[0].network='lan'
+	uci commit umdns
+	/etc/init.d/umdns enable
+	/etc/init.d/umdns restart
+fi
+
+# IPv6 RA/DHCP is not needed on this travel router and costs RAM.
+[ -x /etc/init.d/odhcpd ] && /etc/init.d/odhcpd disable
 
 # ------------------------------------------------------------------ commit ---
 

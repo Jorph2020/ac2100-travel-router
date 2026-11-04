@@ -662,30 +662,90 @@ cmd_home() {
 # ---------------------------------------------------------------- clients ---
 
 cmd_clients() {
-	local dev now assoc
+	local dev now assoc mdns conn namecache tab
 	now=$(date +%s)
 	assoc="/tmp/travel.assoc.$$"
+	mdns="/tmp/travel.mdns.$$"
+	conn="/tmp/travel.conn.$$"
+	namecache="/etc/travel/mdns.names"
+	mkdir -p /etc/travel
+	touch "$namecache"
+	tab=$(printf '\t')
 	: > "$assoc"
+	: > "$mdns"
+	: > "$conn"
 
 	for dev in $(ap_ifnames); do
 		iwinfo "$dev" assoclist 2>/dev/null | awk -v d="$dev" \
 			'NF >= 2 && $1 ~ /^([0-9A-Fa-f][0-9A-Fa-f]:){5}[0-9A-Fa-f][0-9A-Fa-f]$/ {
 				print tolower($1) "\t" $2 "\t" d
 			}' >> "$assoc"
+
+		# iw reports the real association age; iwinfo does not.
+		iw dev "$dev" station dump 2>/dev/null | awk '
+			/^Station / { mac = $2 }
+			/connected time:/ { print tolower(mac) "\t" $3 }
+		' >> "$conn"
 	done
 
+	# Resolve device names advertised over mDNS (iPhone/iPad/Mac/Apple TV...).
+	if command -v jq >/dev/null 2>&1 && ubus list 2>/dev/null | grep -qx umdns; then
+		ubus call umdns browse 2>/dev/null | jq -r '
+			to_entries[] as $svc
+			| $svc.value | to_entries[]
+			| select(.value.ipv4 != null and .value.ipv4 != "")
+			| [.value.ipv4, .key,
+			   (if $svc.key == "_device-info._tcp" then 1
+			    elif $svc.key == "_airplay._tcp" then 2
+			    elif $svc.key == "_companion-link._tcp" then 3
+			    else 9 end)] | @tsv
+		' 2>/dev/null | awk -F'\t' '
+			{
+				ip = $1; name = $2; prio = $3 + 0
+				if (ip ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ && name != "" &&
+				    (!(ip in best) || prio < bestp[ip])) {
+					best[ip] = name
+					bestp[ip] = prio
+				}
+			}
+			END { for (ip in best) print ip "\t" best[ip] }
+		' > "$mdns"
+	fi
+
+	# Remember names across mDNS advertisements, which are intermittent.
+	if [ -s "$mdns" ] && [ -f /tmp/dhcp.leases ]; then
+		while IFS="$(printf '	')" read -r ip name; do
+			[ -n "$ip" ] || continue
+			mac=$(awk -v ip="$ip" 'NF >= 4 && $3 == ip { print tolower($2); exit }' /tmp/dhcp.leases)
+			[ -n "$mac" ] || continue
+			grep -v "^$mac " "$namecache" > "$namecache.tmp" 2>/dev/null
+			echo "$mac $name" >> "$namecache.tmp"
+			mv -f "$namecache.tmp" "$namecache"
+		done < "$mdns"
+	fi
+
 	if [ -f /tmp/dhcp.leases ]; then
-		awk -v now="$now" '
-			NR == FNR { sig[tolower($1)] = $2; ifc[tolower($1)] = $3; next }
+		awk -v now="$now" -v af="$assoc" -v mf="$mdns" -v cf="$conn" -v nf="$namecache" '
+			FILENAME == af { sig[tolower($1)] = $2; ifc[tolower($1)] = $3; next }
+			FILENAME == cf { age[tolower($1)] = $2 + 0; next }
+			FILENAME == mf { name[$1] = $2; next }
+			FILENAME == nf { cached[tolower($1)] = $2; next }
 			NF >= 4 {
 				ip = $3; mac = tolower($2); host = $4; expiry = $1
+				if (cached[mac] != "") host = cached[mac]
+				else if (name[ip] != "") host = name[ip]
+				if (host == "*" || host == "?" || host == "") host = "未知设备"
 				left = (expiry > 0) ? int((expiry - now) / 60) : -1
 				online = (mac in sig) ? 1 : 0
-				print ip "\t" mac "\t" host "\t" sig[mac] "\t" ifc[mac] "\t" left "\t" online
+				connected = (mac in age) ? age[mac] : 0
+				key = (1 - online) "\t" (999999999 - connected)
+				print key "\t" ip "\t" mac "\t" host "\t" sig[mac] "\t" ifc[mac] "\t" left "\t" online "\t" connected
 			}
-		' "$assoc" /tmp/dhcp.leases | sort -t. -k1,1n -k2,2n -k3,3n -k4,4n
+		' "$assoc" "$conn" "$mdns" "$namecache" /tmp/dhcp.leases \
+			| sort | cut -f3-
 	fi
-	rm -f "$assoc"
+
+	rm -f "$assoc" "$mdns" "$conn"
 }
 
 # --------------------------------------------------------------- OpenClash ---
@@ -796,6 +856,50 @@ cmd_proxy() {
 	esac
 }
 
+cmd_shellcrash() {
+	local action="${1:-status}" core="${2:-}" src cfgdir ver was_running
+
+	case "$action" in
+		status)
+			printf 'installed=%s\n' "$([ -d /etc/ShellCrash ] && echo 1 || echo 0)"
+			printf 'running=%s\n' "$(pidof CrashCore >/dev/null 2>&1 && echo 1 || echo 0)"
+			printf 'core=%s\n' "$(sed -n 's/^crashcore=//p' /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)"
+			printf 'core_version=%s\n' "$(sed -n 's/^core_v=//p' /etc/ShellCrash/configs/ShellCrash.cfg 2>/dev/null | head -n1)"
+			printf 'autostart=%s\n' "$([ -L /etc/rc.d/S99shellcrash ] && echo 1 || echo 0)"
+			;;
+		core)
+			case "$core" in
+				mihomo|meta)
+					src=/etc/ShellCrash/CrashCore.mihomo
+					cfgdir=meta
+					ver=$(/etc/ShellCrash/CrashCore.mihomo -v 2>/dev/null | awk '{ print $3; exit }')
+					;;
+				singbox|sing-box)
+					src=/etc/ShellCrash/CrashCore.singbox
+					cfgdir=singboxr
+					ver=$(/etc/ShellCrash/CrashCore.singbox version 2>/dev/null | awk '/^sing-box version/ { print $3; exit }')
+					;;
+				*)
+					die "未知内核: $core（可选 mihomo / singbox）"
+					;;
+			esac
+			[ -f "$src" ] || die "内核备份不存在: $src"
+			was_running=0
+			pidof CrashCore >/dev/null 2>&1 && was_running=1
+			[ "$was_running" = "1" ] && /etc/ShellCrash/start.sh stop >/dev/null 2>&1
+			cp -f "$src" /etc/ShellCrash/CrashCore.raw
+			chmod 755 /etc/ShellCrash/CrashCore.raw
+			sed -i "s/^crashcore=.*/crashcore=$cfgdir/" /etc/ShellCrash/configs/ShellCrash.cfg
+			sed -i "s/^core_v=.*/core_v=$ver/" /etc/ShellCrash/configs/ShellCrash.cfg
+			[ "$was_running" = "1" ] && ( /etc/ShellCrash/start.sh start >/tmp/travel-shellcrash.log 2>&1 & )
+			printf 'ok core=%s version=%s\n' "$cfgdir" "$ver"
+			;;
+		*)
+			die "未知 ShellCrash 操作: $action"
+			;;
+	esac
+}
+
 cmd_reconnect() {
 	(
 		/sbin/ifup wan >/dev/null 2>&1
@@ -820,6 +924,7 @@ main() {
 		clients) cmd_clients ;;
 		openclash) cmd_openclash "${2:-status}" ;;
 		proxy) cmd_proxy "${2:-status}" ;;
+		shellcrash) cmd_shellcrash "${2:-status}" "${3:-}" ;;
 		reconnect) cmd_reconnect ;;
 		help|-h|--help) usage ;;
 		*) usage; exit 1 ;;
