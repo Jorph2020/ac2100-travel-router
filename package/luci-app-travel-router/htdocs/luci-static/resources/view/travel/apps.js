@@ -37,6 +37,17 @@ return view.extend({
 		var scInstalled = s.shellcrash_installed === '1';
 		var scRunning = s.shellcrash_running === '1';
 
+		function toggleShellCrash(btn) {
+			if (btn) btn.disabled = true;
+			tr.exec(['shellcrash', scRunning ? 'stop' : 'start']).then(function() {
+				tr.notify(scRunning ? 'ShellCrash 已停用' : 'ShellCrash 已启动', 'info');
+				window.setTimeout(function() { location.reload(); }, 1200);
+			}).catch(function(e) {
+				tr.notify(e.message, 'danger');
+				if (btn) btn.disabled = false;
+			});
+		}
+
 		function switchCore(core, btn) {
 			if (btn) btn.disabled = true;
 			tr.notify('正在切换 ' + core + ' 内核…');
@@ -150,6 +161,12 @@ return view.extend({
 				]),
 				E('p', { 'class': 'tr-dim tr-small tr-mt' },
 					'ShellCrash 没有 LuCI 配置页，配置入口是 SSH 菜单。订阅、规则、内核切换都在下面的菜单里完成。'),
+				E('div', { 'class': 'tr-actions tr-mt' }, [
+					E('button', {
+						'class': 'cbi-button ' + (scRunning ? 'cbi-button-reset' : 'cbi-button-apply'),
+						'click': function(ev) { toggleShellCrash(ev.target); }
+					}, scRunning ? '停用 ShellCrash' : '启动 ShellCrash')
+				]),
 				E('div', { 'class': 'tr-row' }, [
 					E('span', { 'class': 'tr-label' }, '当前内核'),
 					E('span', { 'class': 'tr-value tr-mono' },

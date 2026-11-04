@@ -909,6 +909,22 @@ cmd_shellcrash() {
 	local action="${1:-status}" core="${2:-}" src cfgdir ver was_running
 
 	case "$action" in
+		start|stop|toggle)
+			[ -x /etc/ShellCrash/start.sh ] || die "ShellCrash 未安装"
+			case "$action" in
+				start) /etc/ShellCrash/start.sh start >/tmp/travel-shellcrash.log 2>&1 ;;
+				stop) /etc/ShellCrash/start.sh stop >/dev/null 2>&1 ;;
+				toggle)
+					if pidof CrashCore >/dev/null 2>&1; then
+						/etc/ShellCrash/start.sh stop >/dev/null 2>&1
+					else
+						/etc/ShellCrash/start.sh start >/tmp/travel-shellcrash.log 2>&1
+					fi
+					;;
+			esac
+			sleep 2
+			if pidof CrashCore >/dev/null 2>&1; then echo "running=1"; else echo "running=0"; fi
+			;;
 		status)
 			printf 'installed=%s\n' "$([ -d /etc/ShellCrash ] && echo 1 || echo 0)"
 			printf 'running=%s\n' "$(pidof CrashCore >/dev/null 2>&1 && echo 1 || echo 0)"
