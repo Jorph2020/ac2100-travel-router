@@ -62,6 +62,7 @@ define Package/shellcrash-bundle/install
 	$(INSTALL_BIN) ./files/init.d/shellcrash $(1)/etc/init.d/shellcrash
 	$(INSTALL_DIR) $(1)/etc/rc.d
 	ln -sf ../init.d/shellcrash $(1)/etc/rc.d/S99shellcrash
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/usr/bin/crash $(1)/usr/bin/crash
 	$(INSTALL_DIR) $(1)/etc/profile.d
 	$(INSTALL_DATA) ./files/profile.d/shellcrash.sh $(1)/etc/profile.d/shellcrash.sh
