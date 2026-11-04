@@ -23,7 +23,11 @@ tar -xf "$IMG" -C "$TMP"
 ROOTFS_IMG="$(find "$TMP" -type f -name root | head -n1)"
 [ -n "$ROOTFS_IMG" ] || { echo "ERROR: no rootfs in image" >&2; exit 1; }
 
-unsquashfs -q -d "$TMP/rootfs" "$ROOTFS_IMG" >/dev/null
+if [ "$(id -u)" -eq 0 ]; then
+	unsquashfs -q -d "$TMP/rootfs" "$ROOTFS_IMG" >/dev/null
+else
+	sudo -n unsquashfs -q -d "$TMP/rootfs" "$ROOTFS_IMG" >/dev/null
+fi
 R="$TMP/rootfs"
 
 fail=0
