@@ -31,6 +31,20 @@ for CSS in /www/luci-static/*/cascade.css; do
 	border-left: 4px solid #2e90fa;
 }
 
+#cbi-wireless .cbi-section:nth-of-type(1) h3::after {
+	content: "  2.4 GHz";
+	color: #12b76a;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+#cbi-wireless .cbi-section:nth-of-type(2) h3::after {
+	content: "  5 GHz";
+	color: #2e90fa;
+	font-size: 12px;
+	font-weight: 600;
+}
+
 #cbi-wireless .cbi-section-table-row,
 #wifi_assoclist_table tr {
 	vertical-align: middle;
