@@ -884,6 +884,9 @@ cmd_shellcrash() {
 					;;
 			esac
 			[ -f "$src" ] || die "内核备份不存在: $src"
+			if [ "$cfgdir" = "singboxr" ] && [ ! -s /etc/ShellCrash/jsons/config.json ]; then
+				die "当前只有 Clash YAML 配置；sing-box 需要 sing-box JSON 订阅，请先在 ShellCrash 配置管理中导入对应订阅"
+			fi
 			was_running=0
 			pidof CrashCore >/dev/null 2>&1 && was_running=1
 			[ "$was_running" = "1" ] && /etc/ShellCrash/start.sh stop >/dev/null 2>&1
@@ -891,6 +894,11 @@ cmd_shellcrash() {
 			chmod 755 /etc/ShellCrash/CrashCore.raw
 			sed -i "s/^crashcore=.*/crashcore=$cfgdir/" /etc/ShellCrash/configs/ShellCrash.cfg
 			sed -i "s/^core_v=.*/core_v=$ver/" /etc/ShellCrash/configs/ShellCrash.cfg
+			if [ "$cfgdir" = "meta" ]; then
+				echo 'COMMAND="$TMPDIR/CrashCore -d $BINDIR -f $TMPDIR/config.yaml"' > /etc/ShellCrash/configs/command.env
+			else
+				echo 'COMMAND="$TMPDIR/CrashCore run -D $BINDIR -C $TMPDIR/jsons"' > /etc/ShellCrash/configs/command.env
+			fi
 			[ "$was_running" = "1" ] && ( /etc/ShellCrash/start.sh start >/tmp/travel-shellcrash.log 2>&1 & )
 			printf 'ok core=%s version=%s\n' "$cfgdir" "$ver"
 			;;
