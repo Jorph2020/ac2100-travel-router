@@ -17,7 +17,14 @@ if ! command -v unsquashfs >/dev/null 2>&1; then
 fi
 
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+cleanup() {
+	if [ "$(id -u)" -eq 0 ]; then
+		rm -rf "$TMP"
+	else
+		sudo -n rm -rf "$TMP" 2>/dev/null || rm -rf "$TMP" 2>/dev/null || true
+	fi
+}
+trap cleanup EXIT
 
 tar -xf "$IMG" -C "$TMP"
 ROOTFS_IMG="$(find "$TMP" -type f -name root | head -n1)"
