@@ -8,6 +8,9 @@ STOP=10
 
 boot() {
 	(
+		if [ ! -s /etc/config/wireless ] && [ -s /etc/travel/wireless.ap.bak ]; then
+			cp -f /etc/travel/wireless.ap.bak /etc/config/wireless
+		fi
 		for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
 			sleep 2
 			/usr/bin/travel-router setup >/dev/null 2>&1

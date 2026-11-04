@@ -337,18 +337,19 @@ cmd_setup() {
 	local apply="${1:-}" radio band suffix ssid ap sec dev mode
 	local adopt radios="" wait=0
 
-	radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
-
-	if [ -z "$radios" ]; then
+	# Only generate a wireless config when there is no config at all.
+	# Calling "wifi config" on every boot can rewrite/overwrite a custom AP
+	# (SSID/key), which makes clients ask for the password again after reboot.
+	if [ ! -s /etc/config/wireless ]; then
 		/sbin/wifi config >/dev/null 2>&1
-		radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
 	fi
 
+	radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
+
 	# On a fresh boot the mt76 PHYs may appear a few seconds after
-	# uci-defaults has started.  Wait for them instead of giving up.
+	# uci-defaults has started.  Wait for them, but never rewrite the config.
 	while [ -z "$radios" ] && [ "$wait" -lt 10 ]; do
 		sleep 1
-		/sbin/wifi config >/dev/null 2>&1
 		radios=$(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([^.]*\)=wifi-device$/\1/p")
 		wait=$((wait + 1))
 	done
@@ -413,6 +414,11 @@ cmd_setup() {
 			wifi_reload_bg
 		fi
 	fi
+
+	# Keep a last-known-good copy.  It is only used if /etc/config/wireless is
+	# missing at boot; a normal reboot must keep the committed UCI config.
+	mkdir -p /etc/travel
+	[ -s /etc/config/wireless ] && cp -f /etc/config/wireless /etc/travel/wireless.ap.bak
 
 	return 0
 }
