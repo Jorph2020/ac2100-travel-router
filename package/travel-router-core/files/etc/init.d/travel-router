@@ -1,18 +1,20 @@
 #!/bin/sh /etc/rc.common
 # Re-apply the travel router Wi-Fi defaults after the radios are detected.
-#
-# uci-defaults runs very early during the first boot, possibly before the
-# mt76 drivers have registered their PHYs.  This service retries the
-# idempotent setup a few times so the AP interfaces always exist.
+# Also acts as a small AP watchdog: if no Master interface appears after
+# boot, reload Wi-Fi and retry instead of leaving the router without SSID.
 
 START=99
 STOP=10
 
 boot() {
 	(
-		for i in 1 2 3 4 5 6; do
-			sleep 3
-			/usr/bin/travel-router setup >/dev/null 2>&1 && break
+		for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+			sleep 2
+			/usr/bin/travel-router setup >/dev/null 2>&1
+			if iwinfo 2>/dev/null | grep -q 'Mode: Master'; then
+				break
+			fi
+			wifi reload >/dev/null 2>&1
 		done
 	) &
 }
