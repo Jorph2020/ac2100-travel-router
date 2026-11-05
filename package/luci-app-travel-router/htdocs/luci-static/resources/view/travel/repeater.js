@@ -34,7 +34,11 @@ return view.extend({
 		tr.injectCss();
 
 		var st = data[0] || {};
-		var networks = data[1] || [];
+		// Strongest signal first; the backend already sorts, this also covers
+		// entries coming from a scan cached by an older script version.
+		var networks = (data[1] || []).slice().sort(function(a, b) {
+			return (parseInt(b[2], 10) || -999) - (parseInt(a[2], 10) || -999);
+		});
 
 		function connectTo(ssid, key, band, enc, hidden) {
 			ui.hideModal();

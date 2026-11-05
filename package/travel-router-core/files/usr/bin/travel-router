@@ -226,8 +226,13 @@ scan_parse() {
 	}
 	/ESSID:/ {
 		ssid = $0
-		sub(/^.*ESSID: "/, "", ssid)
-		sub(/".*$/, "", ssid)
+		if (ssid ~ /ESSID: ".*"/) {
+			sub(/^.*ESSID: "/, "", ssid)
+			sub(/".*$/, "", ssid)
+		} else {
+			# Hidden network: iwinfo prints the literal word "unknown".
+			ssid = ""
+		}
 		next
 	}
 	/Encryption:/ {
@@ -331,7 +336,19 @@ cmd_scan() {
 	done
 
 	if [ -s "$tmp" ]; then
-		sort -t "$(printf '\t')" -k3,3nr "$tmp" | awk -F'\t' '!seen[$1]++' > "$SCAN_CACHE"
+		# BusyBox sort has neither -t nor -k, so rank in awk: keep the
+		# strongest BSSID per SSID, then order by signal (strongest first).
+		awk -F'\t' '
+			{
+				ssid = $1
+				sig = $3 + 0
+				if (!(ssid in best) || sig > best[ssid]) {
+					best[ssid] = sig
+					line[ssid] = $0
+				}
+			}
+			END { for (ssid in line) printf "%d\t%s\n", best[ssid], line[ssid] }
+		' "$tmp" | sort -nr | cut -f2- > "$SCAN_CACHE"
 	else
 		: > "$SCAN_CACHE"
 	fi
