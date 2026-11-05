@@ -283,12 +283,6 @@ return view.extend({
 				var bar = document.getElementById('tr-mem-bar');
 				if (bar)
 					bar.style.width = Math.min(parseInt(d.mem_pct, 10) || 0, 100) + '%';
-
-				var pill = document.getElementById('tr-oc-pill');
-				if (pill) {
-					pill.textContent = (d.openclash_installed !== '1') ? '未安装' : ((d.openclash_running === '1') ? '运行中' : '已停止');
-					pill.className = 'tr-pill ' + ((d.openclash_installed === '1' && d.openclash_running === '1') ? 'on' : 'off');
-				}
 			}).catch(function() { /* transient errors while reloading are expected */ });
 		}, 15);
 

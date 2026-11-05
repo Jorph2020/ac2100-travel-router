@@ -2,7 +2,7 @@
 
 基于 **OpenWrt 24.10.8** 的 AC2100（Redmi Router AC2100 / RM2100）固件源码工程：
 把 AC2100 变成一台类 **GL.iNet MT3000** 的旅行路由器 —— 连上随身 Wi-Fi / 手机热点，
-再用自己的 Wi-Fi 和网口共享网络，并内置 **OpenClash**。
+再用自己的 Wi-Fi 和网口共享网络，并内置 **ShellCrash** 代理管理。
 
 > 这是一个**可编译的固件工程**，不包含预编译的 `.bin`。固件需在 Linux 或
 > GitHub Actions 上编译（macOS 无法直接交叉编译 OpenWrt），编译产物为
@@ -14,10 +14,8 @@
   或手机热点变成自己的网络；2.4G / 5G 可分别作为上游。
 - **类 MT3000 菜单**：`首页 / 互联网 / 客户端 / 应用 / 网络 / 系统`，首页是状态卡片
   仪表盘，中继页带扫描列表和一键连接。
-- **full / lite 两种构建**：`full` 内置 OpenClash；`lite` 去掉 OpenClash/Ruby，
-  改用更省内存的 ShellCrash，适合 128 MB 内存的 AC2100。
-- **OpenClash 预装**：`luci-app-openclash` + 中文界面 + 随包附带的
-  `00-gl-direct.yaml`（全直连）兜底配置；内核在 OpenClash 页面一键下载。
+- **ShellCrash 集成**：应用页与首页显示运行状态，支持一键开启/停用和 Yacd 面板；
+  默认不自启，优先保证 Wi-Fi 与中继。
 - **中文 LuCI**，默认 LAN `192.168.8.1`，默认 Wi-Fi `AC2100-Travel` /
   `AC2100-Travel-5G`。
 - **首次登录安全提醒**：首页会检测 root 是否仍未设置密码。
@@ -34,8 +32,7 @@
    和有线 WAN。
 3. **默认 Wi-Fi 密码是固定的 `ac2100travel`**，root 初始无密码。刷机后请立刻在
    LuCI 中修改 Wi-Fi 密码并设置 root 密码。
-4. 首次启用 OpenClash 需要联网下载 **Mihomo 内核（约 20–25 MB）**，之后才能启动
-   代理；固件本身不内置内核（避免版本过期和镜像过大）。
+4. 代理由 ShellCrash 管理，内核（约 20–25 MB）需联网下载；固件本身不内置内核。
 
 ## 型号确认（重要）
 
@@ -70,15 +67,15 @@ CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-ac2100=y
 | 无线 | MT7603EN 2.4G 2×2 + MT7615N 5G 4×4 |
 | 有线 | 3×LAN + 1×WAN 千兆 |
 | OpenWrt | 24.10.8，profile `xiaomi_redmi-router-ac2100` |
-| OpenClash | 0.48.002（feed 固定到 commit `e553e82`） |
-| 内核 | Mihomo Meta（mipsle-softfloat，OpenClash 自动选择） |
+| 代理 | ShellCrash（不自启，应用页/首页手动启停） |
+| 内核 | Mihomo / sing-box（mipsle-softfloat，`crash` 菜单切换） |
 
 ## 快速开始：用 GitHub Actions 编译
 
 1. 把本目录上传到一个 GitHub 仓库（公开或私有均可）。
 2. **推送到 `main` 会自动编译 lite 版**；也可以在 Actions 里手动 Run workflow：
-   - `full`：内置 OpenClash（功能全，内存占用较高）
-   - `lite`：不带 OpenClash/Ruby，刷机后自行安装 ShellCrash（更轻）
+   - `lite`（默认）：精简种子配置
+   - `full`：完整种子配置
 3. 等待约 60–150 分钟（首次编译含工具链）。
 4. 在运行记录的 **Artifacts** 中下载 `ac2100-travel-router-lite-<run>`（或 `-full-`），解压后得到：
 
@@ -188,10 +185,10 @@ ssh root@192.168.8.1 'sysupgrade -n /tmp/openwrt-*-squashfs-sysupgrade.bin'
    - 在“附近的 Wi-Fi”里找到随身 Wi-Fi / 手机热点，点“连接”，输入密码；
    - 或使用“手动连接 / 隐藏网络”；
    - 连接成功后首页会显示“无线中继 · <SSID>”和获取到的地址。
-4. 进入 **应用 → OpenClash**：
-   - 首次使用先点“打开 OpenClash”，在 **全局设置 → 更新内核** 下载 Mihomo 内核；
-   - 在 **配置文件** 中导入机场订阅，选择配置；
-   - 回到“应用”页点“启动”，状态变为“运行中”即生效。
+4. 进入 **应用 → ShellCrash**：
+   - 未安装时按页面提示通过 SSH 安装，并选择 mihomo 内核；
+   - 在 `crash` 菜单导入订阅、选择规则；
+   - 回到应用页或首页点“开启”，状态变为“运行中”即生效。
 5. 建议在 **网络 → 无线** 中修改 Wi-Fi 名称/密码，在 **系统 → 管理权** 中确认 root 密码。
 
 ### 菜单对照 MT3000
@@ -201,7 +198,7 @@ ssh root@192.168.8.1 'sysupgrade -n /tmp/openwrt-*-squashfs-sysupgrade.bin'
 | Internet / Repeater | 互联网 → 中继 | 扫描并连接上游 Wi-Fi（NAT） |
 | Internet / Ethernet | 互联网 → 上网设置 | 原 LuCI 接口页（WAN/LAN） |
 | Clients | 客户端 | DHCP 租约 + Wi-Fi 信号 |
-| Applications / OpenClash | 应用 → OpenClash | 启动/停止、内核与订阅入口 |
+| Applications / Proxy | 应用 → ShellCrash | 启动/停止、Yacd 与安装入口 |
 | Network | 网络 | 原 LuCI 网络菜单 |
 | System | 系统 | 原 LuCI 系统菜单 |
 
@@ -209,9 +206,9 @@ ssh root@192.168.8.1 'sysupgrade -n /tmp/openwrt-*-squashfs-sysupgrade.bin'
 
 ```
 .
-├── config/ac2100.config              # full：含 OpenClash
-├── config/ac2100-lite.config         # lite：不含 OpenClash，配 ShellCrash
-├── feeds.conf                        # packages / luci / openclash（固定 commit）
+├── config/ac2100.config              # full 种子配置
+├── config/ac2100-lite.config         # lite 种子配置（默认）
+├── feeds.conf                        # packages / luci
 ├── package/
 │   ├── travel-router-core/           # 后端脚本 + 首次启动默认值
 │   │   └── files/usr/bin/travel-router
@@ -242,13 +239,7 @@ HOSTNAME="AC2100-Travel"
 ### 增删软件包
 
 在 `config/ac2100.config` 中追加 `CONFIG_PACKAGE_xxx=y`，重新编译。注意
-NAND 根分区约 120 MB，OpenClash 内核还要占 20–25 MB，不要塞入过多大包。
-
-### 更新 OpenClash
-
-修改 `feeds.conf` 最后一行的 commit（或改成 `;master`），然后重新编译。
-OpenClash 0.48.x 需要 `luci-compat` / `luci-lua-runtime` / `dnsmasq-full`，这些
-已在配置中选中。
+NAND 根分区约 120 MB，代理内核还要占 20–25 MB，不要塞入过多大包。
 
 ### 换主题
 
@@ -274,12 +265,12 @@ logread | grep -E 'wpa|netifd|udhcpc'
 酒店/机场网络可能需要网页认证（captive portal）。先用手机或电脑连接上游完成
 认证，或把上游换成随身 Wi-Fi。也可以检查 `ifstatus wwan` 是否拿到地址和 DNS。
 
-**OpenClash 启动失败？**
-最常见原因是内核未下载、订阅配置无效、或 DNS 被上游劫持。查看：
+**ShellCrash 启动失败？**
+常见原因是内核未下载、订阅配置无效，或 DNS 被上游劫持。查看：
 
 ```sh
-logread | grep -i openclash
-cat /tmp/openclash.log
+logread | grep -i -E 'shellcrash|CrashCore'
+cat /tmp/travel-shellcrash.log
 ```
 
 **会不会和光猫/上游冲突？**
@@ -296,10 +287,10 @@ cat /tmp/openclash.log
 - 仅支持 Wi-Fi 中继（NAT），不支持二层桥接 / WDS / 802.11s。
 - 无 USB，因此不支持 USB 4G 网卡或 USB 随身 Wi-Fi。
 - 未集成 AdGuard Home、Docker、多 WAN 负载均衡等大体积功能。
-- OpenClash 内核与订阅需要设备联网后自行下载；lite 版改用 ShellCrash（命令行管理）。
+- ShellCrash 内核与订阅需要设备联网后自行下载；管理入口为应用页或 SSH 的 `crash` 菜单。
 - 本项目未在真实硬件上做完整回归测试；首次刷机请保留救砖手段。
 
 ## 许可
 
-本项目代码以 MIT 许可发布（见 `LICENSE`）。OpenWrt、LuCI、OpenClash、Mihomo
+本项目代码以 MIT 许可发布（见 `LICENSE`）。OpenWrt、LuCI、ShellCrash、Mihomo
 分别遵循其各自许可证；发布的固件镜像应同时遵守这些项目的许可条款。

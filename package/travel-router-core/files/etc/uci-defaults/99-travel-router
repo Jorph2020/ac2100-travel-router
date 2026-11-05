@@ -72,14 +72,6 @@ if [ -x /usr/bin/travel-router ]; then
 fi
 [ -x /etc/init.d/travel-router ] && /etc/init.d/travel-router enable
 
-# ---------------------------------------------------------------- OpenClash ---
-
-if [ -f /etc/config/openclash ]; then
-	uci -q get openclash.config >/dev/null 2>&1 || uci set openclash.config=openclash
-	uci set openclash.config.enable='0'
-	uci set openclash.config.config_path='/etc/openclash/config/00-gl-direct.yaml'
-fi
-
 # mDNS lets us show iPhone/iPad/Mac names in the client list.
 if [ -x /etc/init.d/umdns ]; then
 	uci -q get umdns.@umdns[0] >/dev/null 2>&1 || uci set umdns.@umdns[0]=umdns
@@ -100,7 +92,6 @@ uci commit firewall
 uci commit system
 uci commit luci
 uci commit wireless
-[ -f /etc/config/openclash ] && uci commit openclash
 
 mkdir -p /etc/travel
 touch /etc/travel/configured

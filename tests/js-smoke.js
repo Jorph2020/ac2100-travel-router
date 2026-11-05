@@ -82,8 +82,6 @@ const sampleHome = {
 	relay_ip: '192.168.31.22',
 	clients: '3',
 	wifi_clients: '3',
-	openclash_running: '0',
-	openclash_enabled: '0',
 	rootpw: '0',
 	lan_ip: '192.168.8.1',
 	ssid_2g: 'AC2100-Travel',
@@ -114,11 +112,6 @@ cases.push({
 	file: 'view/travel/apps.js',
 	params: { E, L, document: documentStub, view: viewStub, ui: uiStub, tr: common },
 	render: {
-		openclash_installed: '1',
-		openclash_running: '1',
-		openclash_core: '1',
-		openclash_version: '0.48.002',
-		openclash_core_version: 'Mihomo v1.19.33',
 		shellcrash_installed: '1',
 		shellcrash_running: '0',
 		shellcrash_dir: '/etc/ShellCrash'
@@ -130,11 +123,6 @@ cases.push({
 	file: 'view/travel/apps.js',
 	params: { E, L, document: documentStub, view: viewStub, ui: uiStub, tr: common },
 	render: {
-		openclash_installed: '0',
-		openclash_running: '0',
-		openclash_core: '0',
-		openclash_version: '',
-		openclash_core_version: '',
 		shellcrash_installed: '0',
 		shellcrash_running: '0',
 		shellcrash_dir: ''

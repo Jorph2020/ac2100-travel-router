@@ -81,11 +81,7 @@ grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_redmi-router-ac2100=y' .conf
 	|| die "AC2100 device profile was not selected"
 grep -q '^CONFIG_PACKAGE_luci-app-travel-router=y' .config \
 	|| die "luci-app-travel-router was not selected"
-if grep -q '^CONFIG_PACKAGE_luci-app-openclash=y' .config; then
-	log "Variant: full (OpenClash)"
-else
-	log "Variant: lite (no OpenClash, use ShellCrash)"
-fi
+log "Variant: $(basename "$CONFIG_FILE" .config)"
 
 # Warn about packages that would produce an image without Wi-Fi.  Do not
 # abort the build here: a wrong symbol name should not cost a full rebuild.

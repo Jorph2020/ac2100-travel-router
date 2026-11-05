@@ -36,7 +36,6 @@ endef
 
 define Package/travel-router-core/conffiles
 /etc/config/travel
-/etc/openclash/config/00-gl-direct.yaml
 endef
 
 define Package/travel-router-core/install
@@ -59,8 +58,6 @@ define Package/travel-router-core/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/ieee80211
 	$(INSTALL_BIN) ./files/etc/hotplug.d/ieee80211/20-travel-router $(1)/etc/hotplug.d/ieee80211/20-travel-router
 
-	$(INSTALL_DIR) $(1)/etc/openclash/config
-	$(INSTALL_DATA) ./files/etc/openclash/config/00-gl-direct.yaml $(1)/etc/openclash/config/00-gl-direct.yaml
 endef
 
 $(eval $(call BuildPackage,travel-router-core))

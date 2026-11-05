@@ -12,7 +12,6 @@
 #   forget                          remove the STA configuration completely
 #   home                            key=value dashboard data
 #   clients                         tab separated DHCP/Wi-Fi client list
-#   openclash <status|start|stop>   OpenClash helper
 #   reconnect                       restart WAN and Wi-Fi
 #
 # <band> is one of 2g, 5g, auto. <enc> is a hostapd/wpa_supplicant
@@ -54,7 +53,6 @@ Usage: travel-router <command> [args]
   forget
   home
   clients
-  openclash <status|start|stop>
   proxy status
   reconnect
 EOF
@@ -583,7 +581,7 @@ cmd_home() {
 	local hostname model firmware uptime_s load mem_total mem_avail mem_free
 	local mem_used mem_total_mb mem_pct mem_available_mb swap_total swap_free def_dev uplink wan_ip
 	local status_out ssid signal quality relay_ip relay_state
-	local clients clients_offline leases wifi_clients oc_running oc_enabled oc_installed sc_installed sc_running rootpw lan_ip ssid_2g ssid_5g
+	local clients clients_offline leases wifi_clients sc_installed sc_running rootpw lan_ip ssid_2g ssid_5g
 	local proxy_group proxy_node proxy_delay yacd_url sc_base sc_secret sc_data
 	local shadow dev sta
 
@@ -646,13 +644,6 @@ cmd_home() {
 	[ -n "$clients" ] || clients=0
 	[ -n "$clients_offline" ] || clients_offline=0
 	[ -n "$wifi_clients" ] || wifi_clients=0
-
-	oc_running=0
-	pidof clash >/dev/null 2>&1 && oc_running=1
-	oc_installed=0
-	[ -f /etc/config/openclash ] && oc_installed=1
-	oc_enabled=$(uci_get openclash.config.enable)
-	[ -n "$oc_enabled" ] || oc_enabled=0
 
 	sc_installed=0
 	[ -d /etc/ShellCrash ] && sc_installed=1
@@ -718,9 +709,6 @@ cmd_home() {
 	printf 'clients_offline=%s\n' "$clients_offline"
 	printf 'leases=%s\n' "$leases"
 	printf 'wifi_clients=%s\n' "$wifi_clients"
-	printf 'openclash_installed=%s\n' "$oc_installed"
-	printf 'openclash_running=%s\n' "$oc_running"
-	printf 'openclash_enabled=%s\n' "$oc_enabled"
 	printf 'shellcrash_installed=%s\n' "$sc_installed"
 	printf 'shellcrash_running=%s\n' "$sc_running"
 	printf 'proxy_group=%s\n' "$proxy_group"
@@ -858,77 +846,11 @@ cmd_clients() {
 	rm -f "$assoc" "$mdns" "$conn" "$wire"
 }
 
-# --------------------------------------------------------------- OpenClash ---
-
-cmd_openclash() {
-	local action="${1:-status}" installed=0 running=0 core=0
-	local oc_version="" core_version="" enabled=""
-
-	[ -f /etc/config/openclash ] && installed=1
-	running=0
-	pidof clash >/dev/null 2>&1 && running=1
-	[ -x /etc/openclash/core/clash_meta ] && core=1
-	enabled=$(uci_get openclash.config.enable)
-	[ -n "$enabled" ] || enabled=0
-	oc_version=$(opkg list-installed 2>/dev/null | awk '$1 == "luci-app-openclash" { print $3 }')
-	if [ "$core" = "1" ]; then
-		if command -v timeout >/dev/null 2>&1; then
-			core_version=$(timeout 3 /etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
-		else
-			core_version=$(/etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
-		fi
-	fi
-
-	case "$action" in
-		status)
-			printf 'installed=%s\n' "$installed"
-			printf 'enabled=%s\n' "$enabled"
-			printf 'running=%s\n' "$running"
-			printf 'core=%s\n' "$core"
-			printf 'oc_version=%s\n' "$oc_version"
-			printf 'core_version=%s\n' "$core_version"
-			;;
-		start)
-			[ "$installed" = "1" ] || die "OpenClash 未安装"
-			[ "$core" = "1" ] || die "Mihomo 内核未安装，请先在 OpenClash 页面更新内核"
-			uci -q get openclash.config >/dev/null 2>&1 || uci set openclash.config=openclash
-			uci set openclash.config.enable='1'
-			uci commit openclash
-			/etc/init.d/openclash enable >/dev/null 2>&1
-			( /etc/init.d/openclash start >/tmp/travel-openclash.log 2>&1 ) &
-			echo "ok"
-			;;
-		stop)
-			uci -q get openclash.config >/dev/null 2>&1 || uci set openclash.config=openclash
-			uci set openclash.config.enable='0'
-			uci commit openclash
-			( /etc/init.d/openclash stop >/dev/null 2>&1 ) &
-			echo "ok"
-			;;
-		*)
-			die "未知的 OpenClash 操作: $action"
-			;;
-	esac
-}
-
 # ------------------------------------------------------------------ proxy ---
 
 cmd_proxy() {
 	local action="${1:-status}" d
-	local oc_installed=0 oc_running=0 oc_core=0 oc_version="" oc_core_version=""
 	local sc_installed=0 sc_running=0 sc_dir="" sc_core="" sc_core_version="" sc_autostart=0 yacd_url=""
-
-	[ -f /etc/config/openclash ] && oc_installed=1
-	pidof clash >/dev/null 2>&1 && oc_running=1
-	[ -x /etc/openclash/core/clash_meta ] && oc_core=1
-	oc_version=$(opkg list-installed 2>/dev/null | awk '$1 == "luci-app-openclash" { print $3 }')
-	if [ "$oc_core" = "1" ]; then
-		if command -v timeout >/dev/null 2>&1; then
-			oc_core_version=$(timeout 3 /etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
-		else
-			oc_core_version=$(/etc/openclash/core/clash_meta -v 2>/dev/null | head -n1)
-		fi
-	fi
 
 	for d in /etc/ShellCrash /usr/share/ShellCrash; do
 		if [ -d "$d" ]; then
@@ -948,11 +870,6 @@ cmd_proxy() {
 
 	case "$action" in
 		status)
-			printf 'openclash_installed=%s\n' "$oc_installed"
-			printf 'openclash_running=%s\n' "$oc_running"
-			printf 'openclash_core=%s\n' "$oc_core"
-			printf 'openclash_version=%s\n' "$oc_version"
-			printf 'openclash_core_version=%s\n' "$oc_core_version"
 			printf 'shellcrash_installed=%s\n' "$sc_installed"
 			printf 'shellcrash_running=%s\n' "$sc_running"
 			printf 'shellcrash_dir=%s\n' "$sc_dir"
@@ -1058,7 +975,6 @@ main() {
 		forget) cmd_forget ;;
 		home) cmd_home ;;
 		clients) cmd_clients ;;
-		openclash) cmd_openclash "${2:-status}" ;;
 		proxy) cmd_proxy "${2:-status}" ;;
 		shellcrash) cmd_shellcrash "${2:-status}" "${3:-}" ;;
 		reconnect) cmd_reconnect ;;

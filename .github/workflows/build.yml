@@ -8,7 +8,7 @@ on:
         required: false
         default: "v24.10.8"
       variant:
-        description: "full = OpenClash; lite = no OpenClash, use ShellCrash"
+        description: "lite = ShellCrash (default); full = full seed config"
         required: true
         type: choice
         default: "lite"

@@ -8,7 +8,6 @@
    启动服务会在 20 秒内重试补齐 AP）；
 2. 把 LAN 设为 `192.168.8.1/24`，DHCP 池 `100–249`；
 3. 设置主机名 `AC2100-Travel`、时区 `Asia/Shanghai`、中文 LuCI；
-4. 写入 OpenClash 默认配置（不启动）。
 
 默认连接信息：
 
@@ -91,47 +90,9 @@ logread | grep -E 'wpa|netifd|udhcpc'
 ip route show default
 ```
 
-## OpenClash
+## ShellCrash
 
-### 1. 下载内核
-
-进入 **应用 → OpenClash → 打开 OpenClash**，在 **全局设置 → 更新内核** 中下载
-Mihomo 内核（mipsle-softfloat，约 20–25 MB）。设备必须已经能上网。
-
-也可以手动放置：`/etc/openclash/core/clash_meta`（可执行权限）。
-
-### 2. 导入订阅
-
-在 OpenClash 的 **配置文件 → 订阅** 中添机场订阅并更新，或上传本地 YAML。
-本项目预置了 `00-gl-direct.yaml`（全直连），可用于验证内核与防火墙是否正常。
-
-### 3. 启动
-
-回到 **应用** 页点“启动”，或 OpenClash 页面中的“启用”。启动过程约 10–60 秒，
-状态变为“运行中”后代理生效。
-
-### 4. 验证
-
-```sh
-pidof clash                       # 有输出即进程在运行
-cat /tmp/openclash.log | tail -50
-nft list ruleset | grep -i clash  # firewall4/nftables 规则
-```
-
-浏览器访问 `https://ip.sb` 或 `https://www.cloudflare.com/cdn-cgi/trace` 查看出口 IP。
-
-### 注意事项
-
-- 128 MB 内存跑 Mihomo 偏紧，尽量使用体积小的规则集，避免同时开启多个插件。
-- 若 OpenClash 启动后 LAN 无法上网，先在 OpenClash 中“停止”，确认基础网络正常，
-  再检查 DNS/Fake-IP 设置。
-- 使用上游酒店/机场网络时，先完成 captive portal 认证，再启动 OpenClash。
-- 更新订阅/内核需要设备能直连 GitHub 或镜像；必要时在 OpenClash 中配置代理下载。
-
-## 轻量版（lite）与 ShellCrash
-
-lite 版不包含 OpenClash 和 Ruby，刷好后在 **应用** 页会看到 OpenClash“未安装”，
-下面有 ShellCrash 的安装说明和状态。
+刷好后在 **应用** 页可以看到 ShellCrash 的安装说明、运行状态和启停按钮。
 
 ### 安装 ShellCrash
 
@@ -170,7 +131,7 @@ crash
 
 ### 注意事项
 
-- **不要和 OpenClash 同时运行**；lite 版本身没有 OpenClash。
+- 不要与其他代理插件同时运行。
 - ShellCrash 没有 LuCI 页面，管理入口是 SSH 里的 `crash`。
 - 内核和规则同样吃内存，128 MB 设备仍然建议精简规则。
 - 路由器需要能访问 jsDelivr/GitHub；不行就在电脑下载 `install.sh` 和内核，
@@ -194,9 +155,6 @@ travel-router disconnect
 travel-router forget
 travel-router clients
 travel-router home
-travel-router openclash status
-travel-router openclash start
-travel-router openclash stop
 travel-router reconnect
 ```
 

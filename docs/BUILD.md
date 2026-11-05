@@ -4,7 +4,6 @@
 
 - `travel-router-core`：中继后端脚本与首次启动默认值
 - `luci-app-travel-router`：类 MT3000 的 LuCI 页面
-- `luci-app-openclash`：来自 OpenClash feed（固定 commit）
 
 ## 方式一：GitHub Actions（推荐）
 
@@ -12,7 +11,7 @@
 2. **Actions** 页面启用 workflows。
 3. 选择 **Build AC2100 travel router firmware** → **Run workflow**。
    - `openwrt_version` 默认 `v24.10.8`，可改成其他 24.10.x tag。
-   - `variant` 选 `full`（含 OpenClash）或 `lite`（不含 OpenClash，配 ShellCrash）。
+   - `variant` 选 `lite`（默认）或 `full`，代理由 ShellCrash 管理。
 4. 首次编译约 60–150 分钟；之后有 `openwrt/dl` 缓存会快一些。
 5. 完成后在运行页面底部下载 Artifact。
 
@@ -87,17 +86,11 @@ docker run --rm -it -v "$PWD:/src" ac2100-travel-router-builder
 镜像基于 Debian bookworm，容器内用户 uid 1000。Linux 上若宿主机 uid 不是 1000，
 建议直接用本机编译，或在容器运行后修正 `openwrt/`、`out/` 的属主。
 
-## full 与 lite
+## 构建配置
 
-| | full | lite |
-| --- | --- | --- |
-| OpenClash | 内置 | 不内置 |
-| Ruby | 需要 | 不需要 |
-| 代理方式 | OpenClash 图形界面 | 刷机后安装 ShellCrash（SSH） |
-| 内存压力 | 较高 | 较低 |
-| 适合 | 想要开箱即用图形界面 | 128 MB 内存、追求稳定 |
+默认使用精简种子配置，代理由 ShellCrash 管理。
 
-本地构建 lite：
+本地构建：
 
 ```bash
 CONFIG_FILE="$PWD/config/ac2100-lite.config" ./scripts/build.sh
@@ -134,29 +127,10 @@ sha256sum -c sha256sums
 - `CONFIG_PACKAGE_luci=y`
 - `CONFIG_PACKAGE_luci-app-travel-router=y`
 - `CONFIG_PACKAGE_travel-router-core=y`
-- `CONFIG_PACKAGE_luci-app-openclash=y`
 - `CONFIG_PACKAGE_dnsmasq-full=y`（与 `dnsmasq` 互斥）
 - `CONFIG_PACKAGE_wpad-mbedtls=y`（支持 WPA3-SAE 上游）
 
-OpenClash 依赖 `ruby`、`ruby-yaml`、`bash`、`curl`、`unzip`、`ip-full`、
-`kmod-tun`、`kmod-nft-tproxy` 等，已由包依赖自动带入。
-
-## 更新 OpenClash
-
-`feeds.conf` 最后一行固定了 commit：
-
-```
-src-git openclash https://github.com/vernesong/OpenClash.git^e553e82e01c697aefbe1555261a503f425e00ccd
-```
-
-更新方式：
-
-1. 获取 OpenClash 新 commit；
-2. 替换 `^` 后的 SHA（或改成 `;master` 跟踪最新）；
-3. 重新编译。
-
-> OpenClash 0.48.x 的 LuCI 页面是 Lua 实现，依赖 `luci-compat` 与
-> `luci-lua-runtime`；本项目已显式选中。
+`bash`、`curl`、`unzip`、`ip-full`、`kmod-tun`、`kmod-nft-tproxy` 等由包依赖自动带入。
 
 ## 编译排错
 
@@ -169,7 +143,7 @@ src-git openclash https://github.com/vernesong/OpenClash.git^e553e82e01c697aefbe
 `CONFIG_PACKAGE_dnsmasq-full=y` 和 `# CONFIG_PACKAGE_dnsmasq is not set`。
 
 **镜像过大**：不要额外加入 `luci-app-statistics`、Docker、AdGuard Home 等大包；
-OpenClash 内核不在镜像内。
+代理内核不在镜像内。
 
 **本机 macOS 编译失败**：OpenWrt 构建系统依赖大小写敏感文件系统与 GNU 工具链，
 请使用 Linux 或 Docker。
