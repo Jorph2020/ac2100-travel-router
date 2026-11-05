@@ -120,7 +120,7 @@ return view.extend({
 					E('span', {}, ' 台在线')
 				]),
 				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text(clientBreakdown(s))),
-				E('div', { 'class': 'tr-mt' }, E('a', {
+				E('div', { 'class': 'tr-actions tr-mt' }, E('a', {
 					'class': 'cbi-button',
 					'href': L.url('admin/clients')
 				}, '查看客户端'))
@@ -194,7 +194,9 @@ return view.extend({
 			])),
 
 			card('快捷操作', E('div', {}, [
-				E('div', { 'class': 'tr-actions' }, [
+				E('div', { 'class': 'tr-dim tr-small' },
+					'在「无线设置 / 中继设置」里改动后，点页面底部的「保存并应用」生效。'),
+				E('div', { 'class': 'tr-actions tr-mt' }, [
 					E('button', {
 						'class': 'cbi-button cbi-button-action',
 						'click': function() { location.href = L.url('admin/internet/repeater'); }
@@ -218,9 +220,7 @@ return view.extend({
 							});
 						}
 					}, '重启网络')
-				]),
-				E('div', { 'class': 'tr-dim tr-small tr-mt' },
-					'在「无线设置 / 中继设置」里改动后，点页面底部的「保存并应用」生效。')
+				])
 			]))
 		];
 
