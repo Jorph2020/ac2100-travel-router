@@ -1,60 +1,104 @@
 #!/bin/sh
-# Append a small, scoped stylesheet to the active LuCI theme.
-# This only affects the built-in Network -> Wireless overview.
+# Add a small, scoped stylesheet for the built-in Network -> Wireless overview.
+# LuCI 24.10 renders that page as one GridSection table where every radio and
+# every interface is a row, so the 2.4 GHz and 5 GHz groups need colour,
+# left accent bars, group labels and a divider to read as separate sections.
 for CSS in /www/luci-static/*/cascade.css; do
 	[ -f "$CSS" ] || continue
-	grep -q 'travel-wireless-fix' "$CSS" && continue
+	grep -q 'travel-wireless-band:begin' "$CSS" && continue
 	cat >> "$CSS" <<'CSSEOF'
 
-/* travel-wireless-fix: keep radio icons and rows readable */
-#cbi-wireless .ifacebadge img,
-#wifi_assoclist_table .ifacebadge img,
-#cbi-wireless .cbi-section-table .ifacebadge img {
+/* travel-wireless-band:begin —— 无线概况区分 2.4G / 5G */
+/* LuCI 24.10 的「无线概况」是一张 GridSection 表格：每个 radio 一行，
+   其下每个接口再各占一行，默认全部连成一片。这里按 data-sid 把
+   2.4G 组（绿）与 5G 组（蓝）分开：分组底色、左侧色条、分组标签、
+   组间分隔线，并统一图标尺寸与行高。 */
+
+/* ---------- 通用：图标与行高 ---------- */
+.ifacebadge img {
 	width: 18px;
 	height: 18px;
 	object-fit: contain;
 	vertical-align: middle;
 }
 
-#cbi-wireless .cbi-section {
-	border: 1px solid #e4e7ec;
-	border-radius: 10px;
-	padding: 10px 12px;
-	margin-bottom: 14px;
-}
-
-#cbi-wireless .cbi-section:nth-of-type(1) {
-	border-left: 4px solid #12b76a;
-}
-
-#cbi-wireless .cbi-section:nth-of-type(2) {
-	border-left: 4px solid #2e90fa;
-}
-
-#cbi-wireless .cbi-section:nth-of-type(1) h3::after {
-	content: "  2.4 GHz";
-	color: #12b76a;
-	font-size: 12px;
-	font-weight: 600;
-}
-
-#cbi-wireless .cbi-section:nth-of-type(2) h3::after {
-	content: "  5 GHz";
-	color: #2e90fa;
-	font-size: 12px;
-	font-weight: 600;
-}
-
-#cbi-wireless .cbi-section-table-row,
-#wifi_assoclist_table tr {
+tr.cbi-section-table-row > td {
+	padding-top: 8px;
+	padding-bottom: 8px;
 	vertical-align: middle;
 }
 
-#wifi_assoclist_table td,
-#wifi_assoclist_table th {
-	padding-top: 8px;
-	padding-bottom: 8px;
+/* ---------- 2.4 GHz 组 ---------- */
+tr.cbi-section-table-row[data-sid="radio0"] > td {
+	background: #e9f8f0;
+	border-top: 2px solid #bfe9d3;
 }
+tr.cbi-section-table-row[data-sid="radio0"] > td:first-child {
+	border-left: 4px solid #12b76a;
+	font-weight: 600;
+}
+tr.cbi-section-table-row[data-sid^="default_radio0"] > td,
+tr.cbi-section-table-row[data-sid^="travel_ap_2g"] > td,
+tr.cbi-section-table-row[data-sid="wifinet3"] > td {
+	background: #f5fcf8;
+}
+tr.cbi-section-table-row[data-sid^="default_radio0"] > td:first-child,
+tr.cbi-section-table-row[data-sid^="travel_ap_2g"] > td:first-child,
+tr.cbi-section-table-row[data-sid="wifinet3"] > td:first-child {
+	border-left: 4px solid #8edcb4;
+}
+
+/* ---------- 5 GHz 组 ---------- */
+tr.cbi-section-table-row[data-sid="radio1"] > td {
+	background: #eaf2fe;
+	border-top: 2px solid #c6dafb;
+}
+tr.cbi-section-table-row[data-sid="radio1"] > td:first-child {
+	border-left: 4px solid #2e90fa;
+	font-weight: 600;
+}
+tr.cbi-section-table-row[data-sid^="default_radio1"] > td,
+tr.cbi-section-table-row[data-sid^="travel_ap_5g"] > td {
+	background: #f5f9ff;
+}
+tr.cbi-section-table-row[data-sid^="default_radio1"] > td:first-child,
+tr.cbi-section-table-row[data-sid^="travel_ap_5g"] > td:first-child {
+	border-left: 4px solid #9dc6fb;
+}
+
+/* ---------- 分组标签 ---------- */
+tr.cbi-section-table-row[data-sid="radio0"] > td:first-child::before,
+tr.cbi-section-table-row[data-sid="radio1"] > td:first-child::before {
+	display: inline-block;
+	min-width: 58px;
+	padding: 2px 9px;
+	margin-right: 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.5;
+	text-align: center;
+	vertical-align: middle;
+	letter-spacing: .02em;
+}
+tr.cbi-section-table-row[data-sid="radio0"] > td:first-child::before {
+	content: "2.4 GHz";
+	background: #12b76a;
+	color: #fff;
+}
+tr.cbi-section-table-row[data-sid="radio1"] > td:first-child::before {
+	content: "5 GHz";
+	background: #2e90fa;
+	color: #fff;
+}
+
+/* ---------- 组间更明显的分隔 ---------- */
+tr.cbi-section-table-row[data-sid="radio1"] > td {
+	border-top-width: 6px;
+	border-top-color: #dbe6f5;
+}
+/* travel-wireless-band:end */
+
 CSSEOF
 done
 exit 0
