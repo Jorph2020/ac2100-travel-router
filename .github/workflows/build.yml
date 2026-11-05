@@ -70,7 +70,9 @@ jobs:
         run: ./scripts/build.sh
 
       - name: Verify firmware contents
-        run: ./scripts/verify-image.sh
+        run: |
+          set -o pipefail
+          ./scripts/verify-image.sh 2>&1 | tee -a build.log
 
       - name: Upload firmware
         uses: actions/upload-artifact@v5
