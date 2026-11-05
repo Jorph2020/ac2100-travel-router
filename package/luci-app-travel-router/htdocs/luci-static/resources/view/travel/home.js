@@ -43,6 +43,15 @@ function relayStateLabel(state) {
 	}
 }
 
+function clientBreakdown(v) {
+	var wifi = parseInt(v.wifi_clients, 10) || 0;
+	var online = parseInt(v.clients, 10) || 0;
+	var wired = Math.max(0, online - wifi);
+
+	return 'Wi-Fi ' + wifi + ' 台 · 有线 ' + wired + ' 台 · DHCP 租约 '
+		+ (v.leases || '0') + ' 条 · 离线 ' + (v.clients_offline || '0') + ' 条';
+}
+
 return view.extend({
 	load: function() {
 		return tr.exec(['home']).then(tr.parseKV);
@@ -85,12 +94,12 @@ return view.extend({
 				'href': L.url('admin/internet/repeater')
 			}, '设置 ›')),
 
-			card('Wi-Fi 客户端', E('div', {}, [
+			card('在线客户端', E('div', {}, [
 				E('div', { 'class': 'tr-metric' }, [
-					E('strong', { 'id': 'tr-clients' }, tr.text(s.wifi_clients || '0')),
+					E('strong', { 'id': 'tr-clients' }, tr.text(s.clients || '0')),
 					E('span', {}, ' 台在线')
 				]),
-				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text('DHCP 租约 ' + (s.leases || '0') + ' 条 · 离线 ' + (s.clients_offline || '0') + ' 条')),
+				E('div', { 'class': 'tr-dim', 'id': 'tr-leases' }, tr.text(clientBreakdown(s))),
 				E('div', { 'class': 'tr-mt' }, E('a', {
 					'class': 'cbi-button',
 					'href': L.url('admin/clients')
@@ -225,11 +234,11 @@ return view.extend({
 				setText('tr-relay-signal', d.relay_signal ? (d.relay_signal + ' dBm') : '—');
 				setText('tr-relay-state', relayStateLabel(d.relay_state));
 				setText('tr-relay-ip', d.relay_ip || '—');
-				setText('tr-clients', d.wifi_clients || '0');
+				setText('tr-clients', d.clients || '0');
 				setText('tr-proxy-group', d.proxy_group || '—');
 				setText('tr-proxy-node', d.proxy_node || '—');
 				setText('tr-proxy-delay', d.proxy_delay ? (d.proxy_delay + ' ms') : '—');
-				setText('tr-leases', 'DHCP 租约 ' + (d.leases || '0') + ' 条 · 离线 ' + (d.clients_offline || '0') + ' 条');
+				setText('tr-leases', clientBreakdown(d));
 				setText('tr-uptime', tr.fmtUptime(d.uptime));
 				setText('tr-load', d.load || '0');
 				setText('tr-mem', '已用 ' + d.mem_used + ' / ' + d.mem_total + ' MB（' + d.mem_pct + '%）');
