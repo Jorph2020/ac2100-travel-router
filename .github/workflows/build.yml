@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Free disk space
         run: |
@@ -55,7 +55,7 @@ jobs:
             file wget squashfs-tools
 
       - name: Cache OpenWrt downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: openwrt/dl
           key: openwrt-dl-${{ github.event.inputs.openwrt_version || 'v24.10.8' }}-${{ github.event.inputs.variant || 'lite' }}-${{ hashFiles('feeds.conf', 'config/ac2100.config', 'config/ac2100-lite.config') }}
@@ -75,7 +75,7 @@ jobs:
           ./scripts/verify-image.sh 2>&1 | tee -a build.log
 
       - name: Upload firmware
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ac2100-travel-router-${{ github.event.inputs.variant || 'lite' }}-${{ github.run_number }}
           path: out/*
@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload build log on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: build-log-${{ github.run_number }}
           path: build.log
