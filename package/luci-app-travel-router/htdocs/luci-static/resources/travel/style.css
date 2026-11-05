@@ -107,15 +107,24 @@
 	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
 }
 
-/* 卡片正文纵向弹性：内容少的卡片由正文撑开，底部操作统一贴底 */
-.tr-card > div:not(.tr-card-head) {
+/* 只有首页卡片带 .tr-card-body，才启用纵向弹性。
+   其它页面（中继/客户端/应用）的卡片是 head + 若干 tr-row 直接排列，
+   不能对每一行都设 flex:1，否则行会被平均拉伸、间距错乱。 */
+.tr-card > .tr-card-body {
 	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
 }
 
-.tr-card .tr-actions {
+.tr-card-body > div {
+	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.tr-card-body .tr-actions {
 	margin-top: auto;
 }
 

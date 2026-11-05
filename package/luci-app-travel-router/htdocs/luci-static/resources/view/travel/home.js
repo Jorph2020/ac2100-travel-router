@@ -17,7 +17,7 @@ function card(title, body, extra) {
 			E('h3', {}, title),
 			extra || ''
 		]),
-		body
+		E('div', { 'class': 'tr-card-body' }, body)
 	]);
 }
 
