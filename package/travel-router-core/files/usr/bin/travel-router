@@ -363,8 +363,8 @@ cmd_setup() {
 			*)  ssid="$SSID_2G"; suffix="2g" ;;
 		esac
 
-		uci set "wireless.$radio.disabled='0'"
-		[ -n "$(uci_get "wireless.$radio.country")" ] || uci set "wireless.$radio.country='CN'"
+		uci set "wireless.$radio.disabled=0"
+		[ -n "$(uci_get "wireless.$radio.country")" ] || uci set "wireless.$radio.country=CN"
 
 		ap=""
 		adopt=0
@@ -391,20 +391,20 @@ cmd_setup() {
 			adopt=1
 			uci set "wireless.$ap=wifi-iface"
 			uci set "wireless.$ap.device=$radio"
-			uci set "wireless.$ap.mode='ap'"
-			uci set "wireless.$ap.network='lan'"
+			uci set "wireless.$ap.mode=ap"
+			uci set "wireless.$ap.network=lan"
 		fi
 
 		if [ "$adopt" = "1" ]; then
 			uci set "wireless.$ap.ssid=$ssid"
-			uci set "wireless.$ap.encryption='psk2'"
+			uci set "wireless.$ap.encryption=psk2"
 			uci set "wireless.$ap.key=$DEFAULT_WIFI_KEY"
 		fi
 
-		uci set "wireless.$ap.travel='1'"
-		uci set "wireless.$ap.disabled='0'"
-		uci set "wireless.$ap.network='lan'"
-		uci set "wireless.$ap.isolate='0'"
+		uci set "wireless.$ap.travel=1"
+		uci set "wireless.$ap.disabled=0"
+		uci set "wireless.$ap.network=lan"
+		uci set "wireless.$ap.isolate=0"
 	done
 
 	if [ -n "$(uci changes wireless 2>/dev/null)" ]; then

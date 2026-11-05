@@ -39,8 +39,8 @@ uci set dhcp.lan.ndp='disabled'
 # Make sure the WAN zone performs NAT for the repeater uplink.
 WAN_ZONE=$(uci show firewall 2>/dev/null | sed -n "s/^firewall\.\([^.]*\)\.name='wan'$/\1/p" | head -n1)
 if [ -n "$WAN_ZONE" ]; then
-	uci set "firewall.$WAN_ZONE.masq='1'"
-	uci set "firewall.$WAN_ZONE.mtu_fix='1'"
+	uci set "firewall.$WAN_ZONE.masq=1"
+	uci set "firewall.$WAN_ZONE.mtu_fix=1"
 fi
 
 # ----------------------------------------------------------------- system ---
