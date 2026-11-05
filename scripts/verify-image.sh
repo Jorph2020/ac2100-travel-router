@@ -63,6 +63,7 @@ need_file /www/luci-static/resources/view/travel/clients.js
 need_file /etc/ShellCrash/menu.sh
 need_file /etc/ShellCrash/CrashCore.raw
 need_file /etc/ShellCrash/ui/index.html
+need_file /etc/uci-defaults/99-travel-wireless-css
 need_file /etc/init.d/travel-router
 need_link /etc/rc.d/S99travel-router
 need_file /etc/hotplug.d/ieee80211/20-travel-router
@@ -84,6 +85,12 @@ fi
 for fw in /lib/firmware/mediatek/mt7615_n9.bin /lib/firmware/mediatek/mt7615_cr4.bin /lib/firmware/mt7603_e2.bin; do
 	need_file "$fw"
 done
+
+if [ -e "$R/etc/rc.d/S99shellcrash" ]; then
+	echo "MISS ShellCrash must not autostart"; fail=1
+else
+	echo "OK   ShellCrash autostart disabled"
+fi
 
 if ! grep -q 'umdns' "$R/usr/bin/travel-router"; then
 	echo "MISS travel-router mDNS name support"; fail=1

@@ -48,6 +48,7 @@ define Package/travel-router-core/install
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/etc/uci-defaults/99-travel-router $(1)/etc/uci-defaults/99-travel-router
+	$(INSTALL_BIN) ./files/etc/uci-defaults/99-travel-wireless-css $(1)/etc/uci-defaults/99-travel-wireless-css
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/travel-router $(1)/etc/init.d/travel-router

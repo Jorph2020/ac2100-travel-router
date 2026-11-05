@@ -61,7 +61,9 @@ define Package/shellcrash-bundle/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/init.d/shellcrash $(1)/etc/init.d/shellcrash
 	# Deliberately not enabling autostart: Wi-Fi must come up first.
-	# The user starts ShellCrash manually from the apps page.
+	# Remove stale autostart links left in a reused .pkgdir from older builds.
+	$(INSTALL_DIR) $(1)/etc/rc.d
+	rm -f $(1)/etc/rc.d/S99shellcrash
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/usr/bin/crash $(1)/usr/bin/crash
 	$(INSTALL_DIR) $(1)/etc/profile.d
