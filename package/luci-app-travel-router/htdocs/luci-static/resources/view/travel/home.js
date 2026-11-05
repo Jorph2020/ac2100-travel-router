@@ -52,6 +52,26 @@ function clientBreakdown(v) {
 		+ (v.leases || '0') + ' 条 · 离线 ' + (v.clients_offline || '0') + ' 条';
 }
 
+function shellcrashAction(action, btn) {
+	if (btn)
+		btn.disabled = true;
+
+	tr.notify(action === 'start' ? '正在启动 ShellCrash…' : '正在停用 ShellCrash…');
+
+	tr.exec(['shellcrash', action]).then(function(out) {
+		var r = tr.parseKV(out || '');
+
+		tr.notify(r.running === '1' ? 'ShellCrash 已启动' : 'ShellCrash 已停用',
+			r.running === '1' ? 'info' : 'warning');
+		window.setTimeout(function() { location.reload(); }, 1200);
+	}).catch(function(e) {
+		tr.notify(e.message, 'danger');
+
+		if (btn)
+			btn.disabled = false;
+	});
+}
+
 return view.extend({
 	load: function() {
 		return tr.exec(['home']).then(tr.parseKV);
@@ -130,6 +150,16 @@ return view.extend({
 					])
 				]),
 				E('div', { 'class': 'tr-actions tr-mt' }, [
+					E('button', {
+						'class': 'cbi-button cbi-button-apply',
+						'disabled': (s.shellcrash_installed !== '1' || s.shellcrash_running === '1') ? '' : null,
+						'click': function(ev) { shellcrashAction('start', ev.currentTarget); }
+					}, '开启'),
+					E('button', {
+						'class': 'cbi-button cbi-button-negative',
+						'disabled': (s.shellcrash_installed !== '1' || s.shellcrash_running !== '1') ? '' : null,
+						'click': function(ev) { shellcrashAction('stop', ev.currentTarget); }
+					}, '停用'),
 					E('a', {
 						'class': 'cbi-button cbi-button-action',
 						'href': s.yacd_url || '#',
