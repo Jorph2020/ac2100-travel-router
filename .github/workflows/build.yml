@@ -73,7 +73,7 @@ jobs:
         run: ./scripts/verify-image.sh
 
       - name: Upload firmware
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ac2100-travel-router-${{ github.event.inputs.variant || 'lite' }}-${{ github.run_number }}
           path: out/*
@@ -92,7 +92,7 @@ jobs:
 
       - name: Upload build log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-log-${{ github.run_number }}
           path: build.log
