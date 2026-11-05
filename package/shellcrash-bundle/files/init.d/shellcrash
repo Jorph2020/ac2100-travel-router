@@ -1,6 +1,10 @@
 #!/bin/sh /etc/rc.common
 
-START=99
+# No START on purpose: OpenWrt's default_postinst runs "enable" for every
+# /etc/init.d/ script of a package during image assembly, which would create
+# /etc/rc.d/S99shellcrash and make ShellCrash start before Wi-Fi.  Without
+# START, enable() creates no link; manual "/etc/init.d/shellcrash start"
+# still works because it does not depend on START.
 CRASHDIR=/etc/ShellCrash
 
 SERVICE_DAEMONIZE=1
