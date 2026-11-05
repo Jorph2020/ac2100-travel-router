@@ -74,6 +74,16 @@ jobs:
           set -o pipefail
           ./scripts/verify-image.sh 2>&1 | tee -a build.log
 
+      - name: Preserve verify log on failure
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp build.log verify-last.log 2>/dev/null || true
+          git add -f verify-last.log
+          git commit -m "ci: preserve verify log [skip ci]" || true
+          git push || true
+
       - name: Upload firmware
         uses: actions/upload-artifact@v7
         with:
