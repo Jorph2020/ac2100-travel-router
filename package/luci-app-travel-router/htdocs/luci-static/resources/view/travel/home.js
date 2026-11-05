@@ -191,6 +191,36 @@ return view.extend({
 				row('2.4 GHz', s.ssid_2g || '—'),
 				row('5 GHz', s.ssid_5g || '—'),
 				row('管理地址', 'http://' + (s.lan_ip || '192.168.8.1'))
+			])),
+
+			card('快捷操作', E('div', {}, [
+				E('div', { 'class': 'tr-actions' }, [
+					E('button', {
+						'class': 'cbi-button cbi-button-action',
+						'click': function() { location.href = L.url('admin/internet/repeater'); }
+					}, '中继设置'),
+					E('button', {
+						'class': 'cbi-button',
+						'click': function() { location.href = L.url('admin/network/wireless'); }
+					}, '无线设置'),
+					E('button', {
+						'class': 'cbi-button',
+						'click': function() {
+							tr.confirm('重启网络', '将重新加载 WAN 和 Wi-Fi，已连接的客户端会短暂断线。', '重启').then(function(ok) {
+								if (!ok)
+									return;
+
+								tr.exec(['reconnect']).then(function() {
+									tr.notify('网络正在重新加载，请稍候…');
+								}).catch(function(e) {
+									tr.notify(e.message, 'danger');
+								});
+							});
+						}
+					}, '重启网络')
+				]),
+				E('div', { 'class': 'tr-dim tr-small tr-mt' },
+					'在「无线设置 / 中继设置」里改动后，点页面底部的「保存并应用」生效。')
 			]))
 		];
 
@@ -221,32 +251,6 @@ return view.extend({
 			children.push(warn);
 
 		children.push(E('div', { 'class': 'tr-grid' }, cards));
-
-		children.push(E('div', { 'class': 'tr-actions' }, [
-				E('button', {
-					'class': 'cbi-button cbi-button-action',
-					'click': function() { location.href = L.url('admin/internet/repeater'); }
-				}, '中继设置'),
-				E('button', {
-					'class': 'cbi-button',
-					'click': function() { location.href = L.url('admin/network/wireless'); }
-				}, '无线设置'),
-				E('button', {
-					'class': 'cbi-button',
-					'click': function() {
-						tr.confirm('重启网络', '将重新加载 WAN 和 Wi-Fi，已连接的客户端会短暂断线。', '重启').then(function(ok) {
-							if (!ok)
-								return;
-
-							tr.exec(['reconnect']).then(function() {
-								tr.notify('网络正在重新加载，请稍候…');
-							}).catch(function(e) {
-								tr.notify(e.message, 'danger');
-							});
-						});
-					}
-				}, '重启网络')
-			]));
 
 		var page = E('div', { 'class': 'tr-wrap' }, children);
 
